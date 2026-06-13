@@ -217,10 +217,11 @@ font-size:12px;
 /* =========================
    HERO
 ========================= */
-
 .hero{
 
-height:90vh;
+min-height:90vh;
+
+padding:80px 20px;
 
 display:flex;
 justify-content:center;
@@ -250,31 +251,27 @@ z-index:2;
 color:white;
 
 max-width:800px;
+width:100%;
+
+margin:auto;
 
 }
 
 .hero-content h1{
 
-font-size:70px;
-font-weight:800;
-
-margin-bottom:15px;
+font-size:clamp(42px,6vw,70px);
 
 }
 
 .hero-content h2{
 
-font-size:35px;
-
-margin-bottom:15px;
+font-size:clamp(22px,3vw,35px);
 
 }
 
 .hero-content p{
 
-font-size:18px;
-
-margin-bottom:25px;
+font-size:clamp(14px,2vw,18px);
 
 }
 
@@ -1131,9 +1128,10 @@ display:block;
 position:fixed;
 
 top:0;
-right:-450px;
+right:-100%;
 
-width:420px;
+width:min(420px,90vw);
+
 height:100%;
 
 background:white;
@@ -1985,7 +1983,7 @@ repeat(2,1fr);
    RESPONSIVE MOBILE
 ========================= */
 
-@media(max-width:768px){
+@media(max-width:600px){
 
 header{
 
@@ -2672,17 +2670,33 @@ display:flex;
 
 justify-content:center;
 
+align-items:center;
+
 gap:20px;
 
 margin-top:20px;
+
+flex-wrap:wrap;
 
 }
 
 .hero-social a{
 
-font-size:25px;
+display:flex;
+
+align-items:center;
+
+gap:8px;
+
+font-size:22px;
 
 transition:.3s;
+
+padding:10px 15px;
+
+border-radius:30px;
+
+white-space:nowrap;
 
 }
 
@@ -2727,7 +2741,113 @@ color:#E4405F;
 .fa-whatsapp{
 color:#25D366;
 }
+/* =========================
+   MOBILE RESPONSIVE
+========================= */
 
+@media (max-width: 768px){
+
+    #cartSidebar{
+
+        width:100%;
+
+        right:-100%;
+
+    }
+
+    #cartSidebar.active{
+
+        right:0;
+
+    }
+
+}
+@media (max-width: 1100px){
+
+    header{
+        padding:15px 20px;
+    }
+
+    .logo{
+        flex-shrink:0;
+    }
+
+    nav{
+        gap:10px;
+    }
+
+    nav a{
+        font-size:13px;
+    }
+
+    .logo img{
+        width:45px;
+        height:45px;
+    }
+
+    .logo-text h2{
+        font-size:16px;
+    }
+
+    .header-actions{
+        flex-shrink:0;
+    }
+
+    #darkModeBtn,
+    #cartBtn{
+        width:40px;
+        height:40px;
+    }
+
+    .hero-content{
+        max-width:700px;
+    }
+
+    .hero-content h1{
+        font-size:56px;
+    }
+
+    .hero-content h2{
+        font-size:28px;
+    }
+
+}
+/* =========================
+   GOOGLE MAPS
+========================= */
+
+.maps{
+
+padding:80px 20px;
+
+background:#111;
+
+}
+
+.maps iframe{
+
+width:100%;
+
+height:500px;
+
+border:none;
+
+border-radius:20px;
+
+box-shadow:0 10px 30px rgba(0,0,0,.3);
+
+}
+.maps h2{
+
+text-align:center;
+
+font-size:36px;
+
+margin-bottom:30px;
+
+color:white;
+
+}
 /* =========================
    END OF STYLE.CSS BY: @Hryntp_
 ========================= */
