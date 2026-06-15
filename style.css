@@ -51,6 +51,20 @@ background:#1f1f1f;
 color:#ffffff;
 }
 
+body.dark .cart-item{
+
+background:#1d1d1d;
+
+color:#ffffff;
+
+}
+
+body.dark .cart-item strong{
+
+color:#ffffff;
+
+}
+
 /* =========================
    LOADER
 ========================= */
@@ -278,6 +292,20 @@ font-size:clamp(42px,6vw,70px);
 .hero-content h2{
 
 font-size:clamp(22px,3vw,35px);
+
+}
+
+.hero-rating{
+
+margin-top:25px;
+
+text-align:center;
+
+font-size:14px;
+
+font-weight:600;
+
+color:white;
 
 }
 
@@ -825,7 +853,7 @@ background:white;
 
 .about-image img{
 
-width:100%;
+width:80%;
 
 border-radius:25px;
 
@@ -966,7 +994,8 @@ gap:20px;
 
 }
 
-.gallery-grid img{
+.gallery-grid img,
+.gallery-grid video{
 
 width:100%;
 
@@ -980,9 +1009,12 @@ cursor:pointer;
 
 transition:.4s;
 
+display:block;
+
 }
 
-.gallery-grid img:hover{
+.gallery-grid img:hover,
+.gallery-grid video:hover{
 
 transform:
 scale(1.05);
@@ -1235,11 +1267,13 @@ padding:15px;
 
 margin-bottom:15px;
 
-background:#1d1d1d;
+background:#f8f8f8;
 
 border-radius:15px;
 
 transition:.3s;
+
+color:#222;
 
 }
 
@@ -1828,6 +1862,7 @@ waFloat 2s infinite;
 
 }
 
+
 @keyframes waFloat{
 
 0%{
@@ -1996,7 +2031,13 @@ repeat(2,1fr);
 ========================= */
 
 @media(max-width:600px){
+.hero-rating{
 
+font-size:12px;
+
+margin-top:10px;
+
+}
 header{
 
 flex-direction:column;
@@ -2724,7 +2765,7 @@ color:#E4405F;
 
 .fa-whatsapp{
 
-color:#25D366;
+color:#ffffff;
 
 }
 .hero-social a:hover{
@@ -2743,9 +2784,6 @@ color:#1877F2;
 color:#E4405F;
 }
 
-.fa-whatsapp{
-color:#25D366;
-}
 /* =========================
    MOBILE RESPONSIVE
 ========================= */
@@ -2999,6 +3037,42 @@ flex-shrink:0;
 animation:
 verifiedFloat 2s ease-in-out infinite,
 verifiedGlow 1.5s ease-in-out infinite alternate;
+
+}
+
+/* =========================
+   TRUST BADGE
+========================= */
+
+.trust-badge h3{
+
+font-size:22px;
+
+margin-bottom:10px;
+
+color:#111;
+
+}
+
+.trust-badge p{
+
+font-size:14px;
+
+color:#666;
+
+margin:0;
+
+}
+
+/* =========================
+   LOCK SCROLL
+========================= */
+
+body.no-scroll{
+
+overflow:hidden;
+
+height:100vh;
 
 }
 /* =========================

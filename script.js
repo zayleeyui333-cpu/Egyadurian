@@ -396,7 +396,10 @@ cartBtn.addEventListener(
 ()=>{
 
 cartSidebar.classList.add("active");
+
 overlay.classList.add("active");
+
+document.body.classList.add("no-scroll");
 
 });
 
@@ -414,6 +417,7 @@ function closeSidebar(){
 
 cartSidebar.classList.remove("active");
 overlay.classList.remove("active");
+document.body.classList.remove("no-scroll");
 
 }
 
@@ -814,7 +818,7 @@ pesan +=
 
 window.open(
 
-`https://wa.me/6281234567890?text=${encodeURIComponent(pesan)}`,
+`https://wa.me/6281378874840?text=${encodeURIComponent(pesan)}`,
 
 "_blank"
 
@@ -1201,9 +1205,9 @@ function preloadImages(){
 const images = [
 
 "assets/hero.jpg",
-"assets/musangking.jpg",
-"assets/blackthorn.jpg",
-"assets/monthong.jpg",
+"assets/musangking.png",
+"assets/blackthorn.png",
+"assets/monthong.png",
 "assets/kupas.jpg",
 "assets/pancake.jpg"
 
@@ -1297,6 +1301,8 @@ document.getElementById("galleryModal");
 
 const galleryModalImage =
 document.getElementById("galleryModalImage");
+const galleryModalVideo =
+document.getElementById("galleryModalVideo");
 console.log("galleryModalImage =", galleryModalImage);
 
 console.log("galleryModal =", galleryModal);
@@ -1317,8 +1323,32 @@ console.log("galleryImages =", galleryImages.length);
 
 function updateGalleryModal(){
 
+const currentItem =
+galleryItems[galleryIndex];
+
+if(currentItem.tagName === "VIDEO"){
+
+galleryModalImage.style.display = "none";
+
+galleryModalVideo.style.display = "block";
+
+galleryModalVideo.src =
+currentItem.querySelector("source").src;
+
+galleryModalVideo.load();
+
+}else{
+
+galleryModalVideo.pause();
+
+galleryModalVideo.style.display = "none";
+
+galleryModalImage.style.display = "block";
+
 galleryModalImage.src =
-galleryImages[galleryIndex];
+currentItem.src;
+
+}
 
 galleryCounter.innerText =
 `${galleryIndex+1} / ${galleryImages.length}`;

@@ -149,6 +149,7 @@ Kontak
 
         <h2>Durian Premium Pilihan Langsung Dari Medan</h2>
 
+    
         <p>Sejak 1999 Melayani Ribuan Pecinta Durian Indonesia</p>
 
         <p>🍈 Musang King • Black Thorn • Monthong • Durian Kupas Premium 🍈</p>
@@ -191,6 +192,9 @@ Kontak
             <a href="#products" class="hero-btn">Belanja Sekarang</a>
             <a href="#about" class="hero-btn secondary">Tentang Kami</a>
         </div>
+        <div class="hero-rating">
+        ⭐⭐⭐⭐⭐ 4.9/5 Rating Google • 5000+ Pelanggan Puas
+            </div>
 
     </div>
 
@@ -333,13 +337,13 @@ data-category="musang"
 data-price="180000"
 
 data-images='[
-"assets/musangking.jpg",
+"assets/musangking.png",
 "assets/musangking1.jpg",
 "assets/musangking2.jpg"
 ]'>
 
 <img
-src="assets/musangking.jpg" 
+src="assets/musangking.png"
 class="product-image">
 
 <div class="product-info">
@@ -424,13 +428,13 @@ data-category="blackthorn"
 data-price="350000"
 
 data-images='[
-"assets/blackthorn.jpg",
+"assets/blackthorn.png",
 "assets/blackthorn1.jpg",
 "assets/blackthorn2.jpg"
 ]'>
 
 <img
-src="assets/blackthorn.jpg"
+src="assets/blackthorn.png"
 class="product-image">
 
 <div class="product-info">
@@ -513,13 +517,13 @@ data-category="monthong"
 data-price="150000"
 
 data-images='[
-"assets/monthong.jpg",
+"assets/monthong.png",
 "assets/monthong1.jpg",
 "assets/monthong2.jpg"
 ]'>
 
 <img
-src="assets/monthong.jpg"
+src="assets/monthong.png"
 class="product-image">
 
 <div class="product-info">
@@ -589,13 +593,13 @@ data-category="kupas"
 data-price="120000"
 
 data-images='[
-"assets/kupas.jpg",
+"assets/kupas.png",
 "assets/kupas1.jpg",
 "assets/kupas2.jpg"
 ]'>
 
 <img
-src="assets/kupas.jpg"
+src="assets/kupas.png"
 class="product-image">
 
 <div class="product-info">
@@ -656,13 +660,13 @@ data-category="pancake"
 data-price="35000"
 
 data-images='[
-"assets/pancake.jpg",
+"assets/pancake.png",
 "assets/pancake1.jpg",
 "assets/pancake2.jpg"
 ]'>
 
 <img
-src="assets/pancake.jpg"
+src="assets/pancake.png"
 class="product-image">
 
 <div class="product-info">
@@ -715,21 +719,21 @@ Tambah
 
 </div>
 
-<!-- FROZEN DURIAN -->
+<!-- PANCAKE ROLL -->
 
 <div
 class="product-card"
-data-category="frozen"
+data-category="pancakeroll"
 data-price="95000"
 
 data-images='[
-"assets/frozen.jpg",
-"assets/frozen1.jpg",
-"assets/frozen2.jpg"
+"assets/pancakeroll.png",
+"assets/pancakeroll1.jpg",
+"assets/pancakeroll2.jpg"
 ]'>
 
 <img
-src="assets/frozen.jpg"
+src="assets/pancakeroll.png"
 class="product-image">
 
 <div class="product-info">
@@ -737,12 +741,12 @@ class="product-image">
 <span
 class="product-badge premium">
 
-❄️ Frozen
+❄️ Pancakerolls
 
 </span>
 
 <h3>
-Frozen Durian
+Pancake Rolls 
 </h3>
 
 <p class="old-price">
@@ -886,15 +890,39 @@ Galeri EGYA DURIAN
 
 <img src="assets/gallery.jpg" class="gallery-item">
 
-<img src="assets/gallery.jpg"class="gallery-item">
+<img src="assets/gallery1.jpg"class="gallery-item">
 
 <img src="assets/gallery3.jpg"class="gallery-item">
 
-<img src="assets/images.jpg"class="gallery-item">
+<img src="assets/gallery4.jpg"class="gallery-item">
 
-<img src="assets/monthong.jpg"class="gallery-item">
+<img src="assets/gallery5.jpg"class="gallery-item">
 
-<img src="assets/musangking.jpg"class="gallery-item">
+<img src="assets/gallery6.jpg"class="gallery-item">
+
+<img src="assets/gallery7.jpg"class="gallery-item">
+
+<img src="assets/gallery8.jpg"class="gallery-item">
+
+<img src="assets/gallery9.jpg"class="gallery-item">
+
+<img src="assets/gallery10.jpg"class="gallery-item">
+
+<video
+class="gallery-item"
+controls
+playsinline
+preload="metadata">
+
+<source
+src="assets/video1.mp4"
+type="video/mp4">
+
+</video>
+
+Browser Anda tidak mendukung video.
+
+</video>
 
 </div>
 
@@ -1410,7 +1438,7 @@ href="https://wa.me/6281378874840?text=Halo%20EGYA%20DURIAN"
 class="floating-wa"
 target="_blank">
 
-<i class="fa-solid fa-phone"></i>
+<i class="fab fa-whatsapp"></i>
 
 </a>
 
@@ -1436,6 +1464,12 @@ target="_blank">
 <button id="galleryModalPrev">❮</button>
 
 <img id="galleryModalImage" src="">
+
+<video
+id="galleryModalVideo"
+controls
+style="display:none;max-width:90%;max-height:80vh;border-radius:20px;">
+</video>
 
 <button id="galleryModalNext">❯</button>
 
