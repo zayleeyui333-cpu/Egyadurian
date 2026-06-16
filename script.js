@@ -1337,6 +1337,10 @@ currentItem.querySelector("source").src;
 
 galleryModalVideo.load();
 
+galleryModalVideo.muted = true;
+
+galleryModalVideo.play();
+
 }else{
 
 galleryModalVideo.pause();
@@ -1362,13 +1366,17 @@ item.addEventListener(
 "click",
 ()=>{
 
-galleryIndex = index;
+document
+.querySelectorAll("video")
+.forEach(v=>v.pause());
 
-updateGalleryModal();
+galleryIndex = index;
 
 galleryModal.classList.add(
 "show"
 );
+
+updateGalleryModal();
 
 });
 
@@ -1428,9 +1436,9 @@ document
 "click",
 ()=>{
 
-galleryModal.classList.remove("show");
+galleryModalVideo.pause();
 
-console.log("CLOSE CLICKED");
+galleryModal.classList.remove("show");
 
 });
 
@@ -1473,6 +1481,141 @@ document
 }
 
 });
+
+/* =========================
+   HERO FADE SLIDER
+========================= */
+
+const heroSlides =
+document.querySelectorAll(
+".hero-slide"
+);
+
+let heroIndex = 0;
+
+setInterval(()=>{
+
+heroSlides[heroIndex]
+.classList.remove("active");
+
+heroIndex++;
+
+if(
+heroIndex >=
+heroSlides.length
+){
+heroIndex = 0;
+}
+
+heroSlides[heroIndex]
+.classList.add("active");
+
+},4000);
+/* =========================
+   HERO COUNTER PREMIUM
+========================= */
+
+const counters =
+document.querySelectorAll(
+".counter"
+);
+
+let heroCounterStarted = false;
+
+function startCounters(){
+
+if(heroCounterStarted) return;
+
+heroCounterStarted = true;
+
+counters.forEach(counter=>{
+
+const target =
++counter.dataset.target;
+
+let current = 0;
+
+const increment =
+target / 120;
+
+const updateCounter = ()=>{
+
+current += increment;
+
+if(current < target){
+
+counter.innerText =
+Math.ceil(current);
+
+requestAnimationFrame(
+updateCounter
+);
+
+}else{
+
+if(target === 5000){
+
+counter.innerText =
+"5000+";
+
+}else if(target === 20){
+
+counter.innerText =
+"20+";
+
+}else if(target === 100){
+
+counter.innerText =
+"100%";
+
+}else{
+
+counter.innerText =
+target;
+
+}
+
+}
+
+};
+
+updateCounter();
+
+});
+
+}
+
+const heroSection =
+document.querySelector(
+".hero"
+);
+
+const heroObserver =
+new IntersectionObserver(
+
+(entries)=>{
+
+entries.forEach(entry=>{
+
+if(entry.isIntersecting){
+
+startCounters();
+
+}
+
+});
+
+},
+
+{
+threshold:0.5
+}
+
+);
+
+heroObserver.observe(
+heroSection
+);
 /* =========================
    END OF SCRIPT.JS BY: Hryntp_
 ========================= */

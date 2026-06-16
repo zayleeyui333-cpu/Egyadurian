@@ -257,15 +257,73 @@ text-align:center;
 
 position:relative;
 
-background:
-linear-gradient(
-rgba(0,0,0,.6),
-rgba(0,0,0,.6)
-),
-url("assets/bghero.png");
+overflow:hidden;
 
-background-size:cover;
-background-position:center;
+}
+
+/* =========================
+   HERO SLIDER
+========================= */
+
+.hero-slider{
+
+position:absolute;
+
+top:0;
+left:0;
+
+width:100%;
+height:100%;
+
+z-index:0;
+
+}
+
+.hero-slide{
+
+position:absolute;
+
+top:0;
+left:0;
+
+width:100%;
+height:100%;
+
+opacity:0;
+
+transition:opacity 1.5s ease-in-out;
+
+}
+
+.hero-slide.active{
+
+opacity:1;
+
+}
+
+.hero-slide img{
+
+width:100%;
+height:100%;
+
+object-fit:cover;
+
+display:block;
+
+}
+.hero-overlay{
+
+position:absolute;
+
+top:0;
+left:0;
+
+width:100%;
+height:100%;
+
+background:rgba(0,0,0,.55);
+
+z-index:1;
 
 }
 
@@ -995,22 +1053,15 @@ gap:20px;
 }
 
 .gallery-grid img,
+
 .gallery-grid video{
-
 width:100%;
-
 height:260px;
-
 object-fit:cover;
-
 border-radius:20px;
-
 cursor:pointer;
-
 transition:.4s;
-
 display:block;
-
 }
 
 .gallery-grid img:hover,
