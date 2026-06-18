@@ -1617,5 +1617,34 @@ heroObserver.observe(
 heroSection
 );
 /* =========================
+   CONTACT FORM -> WHATSAPP
+========================= */
+
+document.getElementById("contactForm").addEventListener("submit", function(e){
+
+e.preventDefault();
+
+const nama = document.getElementById("nama").value;
+const kota = document.getElementById("kota").value;
+const pesan = document.getElementById("pesan").value;
+
+const nomorWA = "6281378874840";
+
+const text =
+`Halo EGYA DURIAN 🍈
+
+Nama: ${nama}
+Kota: ${kota}
+Pesan:
+${pesan}`;
+
+const url =
+`https://wa.me/${nomorWA}?text=${encodeURIComponent(text)}`;
+
+window.open(url, "_blank");
+
+});
+
+/* =========================
    END OF SCRIPT.JS BY: Hryntp_
 ========================= */
