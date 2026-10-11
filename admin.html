@@ -27,6 +27,22 @@
     .popup-card button{width:100%;margin-top:21px}
     @keyframes popup-in{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
     @media(max-width:650px){.promo-editor-row{grid-column:auto;grid-template-columns:minmax(0,1fr) auto}.popup-card{padding:23px 18px 18px}}
+    .photo-manager{margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff}
+    .photo-manager-title{font-size:13px;font-weight:800;margin:0 0 4px}
+    .photo-manager-note{font-size:12px;color:var(--muted);margin:0 0 10px}
+    .photo-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:10px 0}
+    .photo-tile{min-width:0;border:1px solid var(--line);border-radius:10px;padding:8px;background:#fbfcfb}
+    .photo-tile img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:7px;background:#edf2ed;display:block}
+    .photo-tile strong{display:block;font-size:12px;margin:7px 0 3px}
+    .photo-path{font-size:10px;color:var(--muted);overflow-wrap:anywhere;min-height:28px}
+    .photo-tile .file-input{margin-top:7px;width:100%;font-size:11px}
+    .photo-tile button{width:100%;margin-top:7px;padding:8px 9px;font-size:11px}
+    .photo-add-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
+    .photo-add-row .file-input{flex:1;min-width:180px}
+    .photo-add-row button{font-size:12px;padding:9px 11px}
+    .pending-photo-list{font-size:12px;color:var(--green);margin-top:8px;overflow-wrap:anywhere}
+    @media(max-width:650px){.photo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.photo-manager{padding:9px}.photo-add-row{align-items:stretch;flex-direction:column}.photo-add-row button{width:100%}}
+
   </style>
 </head>
 <body>
@@ -86,6 +102,8 @@
     let latestData = null;
     let busy = false;
     let persistedProductIds = new Set();
+    const pendingProductFiles = new Map();
+    const MAX_PRODUCT_IMAGES = 10;
 
     const CATEGORY_OPTIONS = [
       ['musang', 'Musang King'], ['blackthorn', 'Black Thorn'], ['monthong', 'Monthong'],
@@ -140,12 +158,43 @@
       const rendered = options.map(([optionValue, labelText]) => `<option value="${esc(optionValue)}" ${optionValue === value ? 'selected' : ''}>${esc(labelText)}</option>`).join('');
       return `<div class="field ${cls}"><label for="${esc(id)}">${esc(label)}</label><select id="${esc(id)}" required>${rendered}</select></div>`;
     }
-    function fileUpload(target, productId = '', productSaved = true) {
-      const id = target === 'hero' ? 'heroFile' : `file-${productId}`;
-      const buttonId = target === 'hero' ? 'uploadHero' : `upload-${productId}`;
-      const disabled = target === 'product' && !productSaved;
-      const note = disabled ? 'Simpan produk dulu, lalu muat ulang untuk unggah foto.' : 'JPG/PNG/WebP · maksimal 2 MB';
-      return `<div class="upload-row"><input class="file-input" id="${esc(id)}" type="file" accept="image/jpeg,image/png,image/webp" ${disabled ? 'disabled' : ''}><button class="secondary" type="button" id="${esc(buttonId)}" ${disabled ? 'disabled data-requires-save="true"' : ''}>${target === 'hero' ? 'Ganti Banner' : 'Ganti Foto'}</button><span class="upload-note">${esc(note)}</span></div>`;
+    function fileUpload(target) {
+      const note = 'JPG/PNG/WebP · maksimal 2 MB';
+      return `<div class="upload-row"><input class="file-input" id="heroFile" type="file" accept="image/jpeg,image/png,image/webp"><button class="secondary" type="button" id="uploadHero">Ganti Banner</button><span class="upload-note">${esc(note)}</span></div>`;
+    }
+    function renderPhotoManager(product) {
+      const id = product.id;
+      const isPersisted = persistedProductIds.has(id);
+      if (!isPersisted) {
+        const pending = pendingProductFiles.get(id);
+        const files = pending ? pending.files : [];
+        const fileNames = files.map(file => file.name).join(', ');
+        return `<div class="photo-manager">
+          <p class="photo-manager-title">Foto produk baru</p>
+          <p class="photo-manager-note">Pilih minimal satu foto sebelum menyimpan produk. Foto pertama menjadi foto utama di card; foto berikutnya menjadi galeri. Maksimal ${MAX_PRODUCT_IMAGES} foto, masing-masing 2 MB.</p>
+          <input class="file-input" id="new-photos-${esc(id)}" type="file" accept="image/jpeg,image/png,image/webp" multiple data-new-product-photos="true" data-product-id="${esc(id)}">
+          <div class="pending-photo-list" id="pending-photo-list-${esc(id)}">${files.length ? `${files.length} foto dipilih: ${esc(fileNames)}` : 'Belum ada foto dipilih.'}</div>
+        </div>`;
+      }
+      const images = Array.isArray(product.images) && product.images.length ? product.images : (product.image ? [product.image] : []);
+      const tiles = images.map((image, index) => `
+        <div class="photo-tile">
+          <img src="${esc(image)}" alt="Foto ${index + 1} ${esc(product.name)}" loading="lazy">
+          <strong>Foto ${index + 1}${index === 0 ? ' · Utama' : ' · Galeri'}</strong>
+          <div class="photo-path">${esc(image)}</div>
+          <input class="file-input" id="replace-file-${esc(id)}-${index}" type="file" accept="image/jpeg,image/png,image/webp" aria-label="Pilih pengganti foto ${index + 1}">
+          <button class="secondary" type="button" data-photo-action="replace" data-id="${esc(id)}" data-index="${index}">Ganti Foto ${index + 1}</button>
+        </div>`).join('');
+      return `<div class="photo-manager">
+        <p class="photo-manager-title">Galeri foto produk (${images.length}/${MAX_PRODUCT_IMAGES})</p>
+        <p class="photo-manager-note">Foto 1 adalah gambar utama yang terlihat di card produk. Foto 2 dan seterusnya tampil saat pelanggan membuka galeri foto produk.</p>
+        <div class="photo-grid">${tiles || '<p class="muted">Belum ada foto produk.</p>'}</div>
+        <div class="photo-add-row">
+          <input class="file-input" id="add-files-${esc(id)}" type="file" accept="image/jpeg,image/png,image/webp" multiple aria-label="Pilih foto tambahan untuk ${esc(product.name)}">
+          <button class="secondary" type="button" data-photo-action="add" data-id="${esc(id)}">+ Tambah Foto ke Galeri</button>
+        </div>
+        <p class="photo-manager-note">Setiap foto maksimal 2 MB. Maksimal ${MAX_PRODUCT_IMAGES} foto per produk.</p>
+      </div>`;
     }
     function productIdNew() {
       return `admin-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -164,7 +213,7 @@
             ${field('Harga lama (angka)', `product-${p.id}-old`, rupiahInput(p.oldPrice), 'number')}
             ${field('Harga sekarang (angka)', `product-${p.id}-price`, rupiahInput(p.price), 'number')}
           </div>
-          ${fileUpload('product', p.id, persistedProductIds.has(p.id))}
+          ${renderPhotoManager(p)}
         </article>`).join('');
       const promos = data.promos.map((item, index) => `
         <div class="promo-editor-row" data-promo-index="${index}">
@@ -202,11 +251,7 @@
         <section class="section-card"><div class="section-heading"><div><div class="section-label">Produk</div><h2>Harga, nama, dan foto produk</h2><p class="muted">Tambah/hapus produk. Card baru mengikuti desain card produk website. Setelah produk disimpan, unggah fotonya.</p></div><button class="primary" type="button" data-action="add-product">+ Tambah Produk</button></div><div class="product-grid">${products}</div></section>
         <section class="section-card"><div class="section-heading"><div><div class="section-label">Ulasan pelanggan</div><h2>Testimoni</h2><p class="muted">Tambah atau hapus testimoni pelanggan.</p></div><button class="primary" type="button" data-action="add-testimonial">+ Tambah Testimoni</button></div><div class="product-grid">${testimonials || '<p class="muted">Belum ada testimoni. Gunakan tombol Tambah Testimoni untuk menambah.</p>'}</div></section>
         <p class="notice">Foto yang diunggah disimpan ke folder assets di GitHub. Setiap penyimpanan membuat commit baru. Jangan tutup halaman sampai popup hasil muncul.</p>`;
-      $('#uploadHero').addEventListener('click', () => uploadImage('hero', '', $('#heroFile')));
-      for (const product of data.products) {
-        const button = $(`#upload-${product.id}`);
-        if (button && persistedProductIds.has(product.id)) button.addEventListener('click', () => uploadImage('product', product.id, $(`#file-${product.id}`)));
-      }
+      $('#uploadHero').addEventListener('click', () => handleHeroUpload());
     }
     function readForm() {
       const value = id => { const element = $(id); return element ? element.value.trim() : ''; };
@@ -242,35 +287,114 @@
       renderEditor(result.data);
       showStatus($('#mainStatus'), 'Data website berhasil dimuat. Silakan edit, lalu simpan.', false);
     }
-    async function uploadImage(target, productId, fileInput) {
+    function mergeDraftIntoServer(serverData, draftData) {
+      const serverProducts = new Map(serverData.products.map(product => [product.id, product]));
+      return {
+        ...serverData,
+        contact: draftData.contact,
+        hero: draftData.hero,
+        about: draftData.about,
+        promos: draftData.promos,
+        testimonials: draftData.testimonials,
+        products: draftData.products.map(product => {
+          const server = serverProducts.get(product.id);
+          return { ...(server || {}), ...product, images: server?.images || product.images || [], image: (server?.images || [])[0] || server?.image || product.image || '' };
+        }),
+      };
+    }
+    function validateImageFile(file) {
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) throw new Error(`File “${file.name}” bukan JPG, PNG, atau WebP.`);
+      if (file.size > 2 * 1024 * 1024) throw new Error(`File “${file.name}” melebihi 2 MB.`);
+    }
+    async function fileToDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error(`File “${file.name}” tidak dapat dibaca.`));
+        reader.readAsDataURL(file);
+      });
+    }
+    async function sendImageFile(target, productId, file, operation = 'replace', imageIndex = 0) {
+      validateImageFile(file);
+      const dataUrl = await fileToDataUrl(file);
+      return api('/api/admin/upload', {
+        method: 'POST',
+        body: JSON.stringify({ target, productId, operation, imageIndex, dataUrl }),
+      });
+    }
+    async function handleHeroUpload() {
       if (busy) return;
-      const pendingEdits = readForm();
-      const file = fileInput && fileInput.files && fileInput.files[0];
-      if (!file) return showPopup('Pilih gambar', 'Pilih file gambar terlebih dahulu.', true);
-      if (!['image/jpeg','image/png','image/webp'].includes(file.type)) return showPopup('Format tidak didukung', 'Gunakan gambar JPG, PNG, atau WebP.', true);
-      if (file.size > 2 * 1024 * 1024) return showPopup('Ukuran terlalu besar', 'Ukuran gambar maksimal 2 MB.', true);
-      if (target === 'product' && !persistedProductIds.has(productId)) return showPopup('Simpan produk dulu', 'Simpan produk baru terlebih dahulu. Setelah data dimuat ulang, tombol unggah fotonya akan aktif.', true);
-      if (!confirm('Unggah gambar dan perbarui website sekarang? Ini akan membuat commit di GitHub.')) return;
-      busy = true;
-      setButtons(true);
+      const file = $('#heroFile').files && $('#heroFile').files[0];
+      if (!file) return showPopup('Pilih gambar banner', 'Pilih file banner JPG, PNG, atau WebP terlebih dahulu.', true);
+      try { validateImageFile(file); } catch (error) { return showPopup('File tidak valid', error.message, true); }
+      if (!confirm('Ganti banner utama dan kirim perubahan ke GitHub sekarang?')) return;
+      busy = true; setButtons(true);
       try {
-        showStatus($('#mainStatus'), 'Mengunggah gambar ke GitHub…');
-        const dataUrl = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = () => reject(new Error('File tidak dapat dibaca.')); reader.readAsDataURL(file); });
-        const result = await api('/api/admin/upload', { method: 'POST', body: JSON.stringify({ target, productId, dataUrl }) });
-        try { await loadEditor(); renderEditor(pendingEdits); } catch (refreshError) { /* Upload succeeded; retain the success response. */ }
-        showStatus($('#mainStatus'), result.message || 'Gambar berhasil diunggah.');
-        showPopup('Foto berhasil diperbarui', result.message || 'Gambar berhasil diunggah dan perubahan dikirim ke GitHub.', false);
+        const result = await sendImageFile('hero', '', file);
+        const latest = await api('/api/admin/content');
+        const draft = mergeDraftIntoServer(latest.data, readForm());
+        persistedProductIds = new Set(latest.data.products.map(product => product.id));
+        renderEditor(draft);
+        showStatus($('#mainStatus'), result.message || 'Banner berhasil diperbarui.');
+        showPopup('Banner berhasil diperbarui', result.message || 'Vercel akan menerbitkan perubahan otomatis.', false);
       } catch (error) {
         showStatus($('#mainStatus'), error.message, true);
-        showPopup('Gagal mengunggah foto', error.message, true);
-      } finally {
-        busy = false;
-        setButtons(false);
-      }
+        showPopup('Gagal mengganti banner', error.message, true);
+      } finally { busy = false; setButtons(false); }
+    }
+    async function handleProductPhotoAction(button) {
+      if (busy) return;
+      const productId = button.dataset.id;
+      const action = button.dataset.photoAction;
+      const product = latestData.products.find(item => item.id === productId);
+      if (!product || !persistedProductIds.has(productId)) return showPopup('Simpan produk dulu', 'Simpan produk baru terlebih dahulu. Foto yang dipilih untuk produk baru akan diunggah otomatis saat menyimpan.', true);
+      const draft = readForm();
+      let files = [];
+      let operation = action;
+      let imageIndex = Number(button.dataset.index || 0);
+      if (action === 'replace') {
+        const input = $(`#replace-file-${productId}-${imageIndex}`);
+        files = input && input.files ? Array.from(input.files).slice(0, 1) : [];
+        if (!files.length) return showPopup('Pilih foto', `Pilih file pengganti untuk Foto ${imageIndex + 1} terlebih dahulu.`, true);
+      } else if (action === 'add') {
+        const input = $(`#add-files-${productId}`);
+        files = input && input.files ? Array.from(input.files) : [];
+        if (!files.length) return showPopup('Pilih foto tambahan', 'Pilih satu atau beberapa foto yang ingin ditambahkan ke galeri.', true);
+        const currentCount = Array.isArray(product.images) ? product.images.length : (product.image ? 1 : 0);
+        if (currentCount + files.length > MAX_PRODUCT_IMAGES) return showPopup('Terlalu banyak foto', `Produk ini memiliki ${currentCount} foto. Maksimal ${MAX_PRODUCT_IMAGES} foto per produk, jadi pilih paling banyak ${MAX_PRODUCT_IMAGES - currentCount} foto tambahan.`, true);
+      } else return;
+      try { files.forEach(validateImageFile); } catch (error) { return showPopup('File tidak valid', error.message, true); }
+      if (!confirm(action === 'replace' ? `Ganti Foto ${imageIndex + 1} untuk ${product.name}?` : `Tambahkan ${files.length} foto ke galeri ${product.name}?`)) return;
+      busy = true; setButtons(true);
+      let completed = 0;
+      try {
+        for (const file of files) {
+          await sendImageFile('product', productId, file, operation, imageIndex);
+          completed++;
+          operation = 'add';
+        }
+        const latest = await api('/api/admin/content');
+        persistedProductIds = new Set(latest.data.products.map(item => item.id));
+        renderEditor(mergeDraftIntoServer(latest.data, draft));
+        const message = action === 'replace'
+          ? `Foto ${imageIndex + 1} berhasil diganti. ${imageIndex === 0 ? 'Gambar utama di card produk ikut berubah.' : 'Foto ini berubah di galeri saat card dibuka.'}`
+          : `${completed} foto berhasil ditambahkan ke galeri produk.`;
+        showStatus($('#mainStatus'), message, false);
+        showPopup(action === 'replace' ? 'Foto berhasil diganti' : 'Foto berhasil ditambahkan', message + ' Vercel akan menerbitkan perubahan otomatis.', false);
+      } catch (error) {
+        try {
+          const latest = await api('/api/admin/content');
+          persistedProductIds = new Set(latest.data.products.map(item => item.id));
+          renderEditor(mergeDraftIntoServer(latest.data, draft));
+        } catch { /* Keep the current editor visible if refresh also fails. */ }
+        const detail = completed ? `${completed} foto sudah berhasil diproses. Foto sisanya belum selesai; muat ulang galeri sebelum mencoba lagi.\n\n${error.message}` : error.message;
+        showStatus($('#mainStatus'), detail, true);
+        showPopup('Foto belum selesai diperbarui', detail, true);
+      } finally { busy = false; setButtons(false); }
     }
     function setButtons(disabled) {
       ['#loginButton','#reloadButton','#logoutButton','#saveButton'].forEach(selector => { const el = $(selector); if (el) el.disabled = disabled; });
-      document.querySelectorAll('#editor button').forEach(button => { button.disabled = disabled || button.dataset.temporarilyDisabled === 'true' || button.dataset.requiresSave === 'true'; });
+      document.querySelectorAll('#editor button, #editor input, #editor textarea, #editor select').forEach(control => { control.disabled = disabled || control.dataset.temporarilyDisabled === 'true' || control.dataset.requiresSave === 'true'; });
     }
     async function showDashboard() {
       $('#loginCard').classList.add('hidden');
@@ -293,7 +417,36 @@
       } catch (error) { showStatus($('#loginStatus'), error.message, true); }
       finally { busy = false; setButtons(false); }
     });
+    $('#editor').addEventListener('change', event => {
+      const input = event.target;
+      if (!input.matches('input[data-new-product-photos="true"]')) return;
+      const productId = input.dataset.productId;
+      const files = Array.from(input.files || []);
+      if (files.length > MAX_PRODUCT_IMAGES) {
+        input.value = '';
+        pendingProductFiles.delete(productId);
+        showPopup('Terlalu banyak foto', `Pilih maksimal ${MAX_PRODUCT_IMAGES} foto untuk satu produk baru.`, true);
+        const summary = $(`#pending-photo-list-${productId}`);
+        if (summary) summary.textContent = 'Belum ada foto dipilih.';
+        return;
+      }
+      try { files.forEach(validateImageFile); }
+      catch (error) {
+        input.value = '';
+        pendingProductFiles.delete(productId);
+        showPopup('File tidak valid', error.message, true);
+        const summary = $(`#pending-photo-list-${productId}`);
+        if (summary) summary.textContent = 'Belum ada foto dipilih.';
+        return;
+      }
+      if (files.length) pendingProductFiles.set(productId, { files, nextIndex: 0 });
+      else pendingProductFiles.delete(productId);
+      const summary = $(`#pending-photo-list-${productId}`);
+      if (summary) summary.textContent = files.length ? `${files.length} foto dipilih: ${files.map(file => file.name).join(', ')}` : 'Belum ada foto dipilih.';
+    });
     $('#editor').addEventListener('click', event => {
+      const photoButton = event.target.closest('button[data-photo-action]');
+      if (photoButton) { handleProductPhotoAction(photoButton); return; }
       const button = event.target.closest('button[data-action]');
       if (!button || busy) return;
       const action = button.dataset.action;
@@ -311,6 +464,7 @@
         const product = data.products.find(item => item.id === id);
         if (!confirm(`Hapus produk “${product ? product.name : id}” dari website? Perubahan baru diterapkan setelah tombol Simpan Perubahan ditekan.`)) return;
         data.products = data.products.filter(item => item.id !== id);
+        pendingProductFiles.delete(id);
         renderEditor(data);
         showStatus($('#mainStatus'), 'Produk ditandai untuk dihapus. Tekan Simpan Perubahan untuk menerapkannya ke website.');
       } else if (action === 'add-promo') {
@@ -342,22 +496,49 @@
     });
     $('#saveButton').addEventListener('click', async () => {
       if (busy) return;
-      busy = true; setButtons(true);
-      try {
-        showStatus($('#mainStatus'), 'Menyimpan perubahan ke GitHub…');
-        const result = await api('/api/admin/content', { method: 'POST', body: JSON.stringify(readForm()) });
-        let refreshNote = '';
-        try { await loadEditor(); }
-        catch (refreshError) { refreshNote = '\nCatatan: penyimpanan sudah berhasil, tetapi formulir gagal dimuat ulang. Tekan Muat ulang setelah menutup popup.'; }
-        showStatus($('#mainStatus'), result.message || 'Perubahan berhasil disimpan.');
-        showPopup(result.unchanged ? 'Tidak ada perubahan' : 'Perubahan berhasil disimpan', (result.message || 'Perubahan berhasil disimpan.') + refreshNote, false);
-      } catch (error) {
-        showStatus($('#mainStatus'), error.message, true);
-        showPopup('Gagal menyimpan perubahan', error.message, true);
-      } finally {
-        busy = false;
-        setButtons(false);
+      const formData = readForm();
+      const newProducts = formData.products.filter(product => !persistedProductIds.has(product.id));
+      for (const product of newProducts) {
+        const pending = pendingProductFiles.get(product.id);
+        if (!pending || !pending.files.length) {
+          return showPopup('Pilih foto produk baru', `Produk “${product.name}” belum memiliki foto pilihan. Pilih minimal satu foto pada bagian Foto Produk Baru sebelum menyimpan.`, true);
+        }
       }
+      const photoJobs = [...pendingProductFiles.entries()].filter(([id, job]) => formData.products.some(product => product.id === id) && job && job.files.length);
+      busy = true; setButtons(true);
+      let contentSaved = false;
+      try {
+        showStatus($('#mainStatus'), 'Menyimpan data produk dan konten ke GitHub…');
+        const result = await api('/api/admin/content', { method: 'POST', body: JSON.stringify(formData) });
+        contentSaved = true;
+        const totalPendingPhotos = photoJobs.reduce((sum, [, job]) => sum + Math.max(0, job.files.length - job.nextIndex), 0);
+        let uploadedPhotos = 0;
+        for (const [productId, job] of photoJobs) {
+          // Photo 1 replaces the template placeholder; later selections are appended to the gallery.
+          for (let index = job.nextIndex || 0; index < job.files.length; index++) {
+            const operation = index === 0 ? 'replace' : 'add';
+            await sendImageFile('product', productId, job.files[index], operation, 0);
+            job.nextIndex = index + 1;
+            uploadedPhotos++;
+          }
+          pendingProductFiles.delete(productId);
+        }
+        await loadEditor();
+        const message = (result.message || (result.unchanged ? 'Tidak ada perubahan pada teks produk.' : 'Perubahan berhasil disimpan.')) + (uploadedPhotos ? ` ${uploadedPhotos} foto produk juga berhasil diunggah.` : '');
+        showStatus($('#mainStatus'), message);
+        showPopup(result.unchanged && !uploadedPhotos ? 'Tidak ada perubahan' : 'Perubahan berhasil disimpan', message, false);
+      } catch (error) {
+        let detail = error.message;
+        if (contentSaved) {
+          try { await loadEditor(); } catch { /* Preserve the visible editor if the refresh fails. */ }
+          detail = `Data produk/konten sudah tersimpan, tetapi ada foto yang belum berhasil diunggah. Foto yang sudah sukses tidak akan diunggah ulang otomatis; tekan Simpan Perubahan lagi untuk melanjutkan foto yang tersisa.\n\n${error.message}`;
+          showStatus($('#mainStatus'), detail, true);
+          showPopup('Data tersimpan, foto belum lengkap', detail, true);
+        } else {
+          showStatus($('#mainStatus'), detail, true);
+          showPopup('Gagal menyimpan perubahan', detail, true);
+        }
+      } finally { busy = false; setButtons(false); }
     });
     $('#reloadButton').addEventListener('click', async () => {
       if (busy) return;

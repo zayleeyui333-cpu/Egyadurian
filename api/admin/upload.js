@@ -12,6 +12,7 @@ const STATIC_PRODUCTS = {
   'PANCAKE ROLL': 'pancakeroll',
 };
 const PRODUCT_MARKER_RE = /<!--\s*(?:(MUSANG KING|BLACK THORN|MONTHONG|DURIAN KUPAS|PANCAKE DURIAN|PANCAKE ROLL)|ADMIN PRODUCT\s+id=["']([a-z0-9_-]{1,64})["'])\s*-->/gi;
+const MAX_IMAGES_PER_PRODUCT = 10;
 function decodeHtml(value) {
   return String(value || '').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>');
 }
@@ -42,38 +43,52 @@ function locateProductBlock(section, productId) {
   for (let index = 0; index < markers.length; index++) {
     const marker = markers[index];
     const id = marker[1] ? STATIC_PRODUCTS[marker[1].toUpperCase()] : marker[2].toLowerCase();
-    if (id !== productId) continue;
+    if (id !== productId.toLowerCase()) continue;
     const end = index + 1 < markers.length ? markers[index + 1].index : (closeIndex < 0 ? section.length : closeIndex);
     return { start: marker.index, end, text: section.slice(marker.index, end) };
   }
-  throw new Error('Produk tidak ditemukan. Simpan produk baru terlebih dahulu, lalu muat ulang panel admin.');
+  throw new Error('Produk tidak ditemukan. Simpan produk terlebih dahulu, lalu muat ulang panel admin.');
 }
-function replaceProductImage(html, productId, assetPath) {
+function parseImageList(cardOpenTag, imageOpenTag) {
+  let images = [];
+  try {
+    const parsed = JSON.parse(getAttribute(cardOpenTag, 'data-images') || '[]');
+    if (Array.isArray(parsed)) images = parsed.filter(item => typeof item === 'string' && item.trim()).slice(0, MAX_IMAGES_PER_PRODUCT);
+  } catch { images = []; }
+  const primary = getAttribute(imageOpenTag, 'src');
+  if (!images.length && primary) images = [primary];
+  return images;
+}
+function updateProductImageList(html, productId, assetPath, operation, imageIndex) {
   const region = getProductSection(html);
   const block = locateProductBlock(region.text, productId);
   const imagePattern = /<img\b(?=[^>]*\bclass=["'][^"']*\bproduct-image\b[^"']*["'])[^>]*>/i;
   const imageMatch = block.text.match(imagePattern);
-  if (!imageMatch) throw new Error('Foto produk tidak ditemukan.');
-  const updatedImageTag = setAttribute(imageMatch[0], 'src', assetPath);
-  let updatedBlock = block.text.replace(imageMatch[0], updatedImageTag);
-
+  if (!imageMatch) throw new Error('Foto utama produk tidak ditemukan.');
   const cardPattern = /<div\b(?=[^>]*\bclass=["'][^"']*\bproduct-card\b[^"']*["'])[^>]*>/i;
-  const cardMatch = updatedBlock.match(cardPattern);
+  const cardMatch = block.text.match(cardPattern);
   if (!cardMatch) throw new Error('Card produk tidak ditemukan.');
-  let images = [];
-  try { images = JSON.parse(getAttribute(cardMatch[0], 'data-images') || '[]'); } catch { images = []; }
-  if (!Array.isArray(images)) images = [];
-  if (STATIC_PRODUCTS[Object.keys(STATIC_PRODUCTS).find(marker => STATIC_PRODUCTS[marker] === productId)]) {
-    if (!images.length) images = [assetPath];
-    else images[0] = assetPath;
-  } else {
-    images = [assetPath];
-  }
-  const updatedCardTag = setAttribute(cardMatch[0], 'data-images', JSON.stringify(images));
-  updatedBlock = updatedBlock.replace(cardMatch[0], updatedCardTag);
 
+  let images = parseImageList(cardMatch[0], imageMatch[0]);
+  if (operation === 'add') {
+    if (images.length >= MAX_IMAGES_PER_PRODUCT) throw new Error(`Maksimal ${MAX_IMAGES_PER_PRODUCT} foto per produk.`);
+    images.push(assetPath);
+  } else {
+    if (!Number.isInteger(imageIndex) || imageIndex < 0 || imageIndex >= images.length) {
+      throw new Error('Nomor foto yang ingin diganti tidak valid. Muat ulang panel admin dan coba lagi.');
+    }
+    images[imageIndex] = assetPath;
+  }
+
+  let updatedBlock = block.text;
+  if (operation === 'replace' && imageIndex === 0) {
+    updatedBlock = updatedBlock.replace(imageMatch[0], setAttribute(imageMatch[0], 'src', assetPath));
+  }
+  const updatedCardMatch = updatedBlock.match(cardPattern);
+  if (!updatedCardMatch) throw new Error('Card produk tidak ditemukan setelah pembaruan foto.');
+  updatedBlock = updatedBlock.replace(updatedCardMatch[0], setAttribute(updatedCardMatch[0], 'data-images', JSON.stringify(images)));
   const updatedSection = region.text.slice(0, block.start) + updatedBlock + region.text.slice(block.end);
-  return html.slice(0, region.start) + updatedSection + html.slice(region.end);
+  return { html: html.slice(0, region.start) + updatedSection + html.slice(region.end), imagesCount: images.length };
 }
 function replaceHeroImage(html, assetPath) {
   const pattern = /(<div\s+class="hero-slider">[\s\S]*?<div\s+class="hero-slide active">[\s\S]*?<img\s+src=")[^"]+("[\s\S]*?<\/div>)/i;
@@ -89,8 +104,12 @@ module.exports = async function handler(req, res) {
 
   try {
     const { target, productId, dataUrl } = req.body || {};
+    const operation = target === 'product' ? (req.body.operation || 'replace') : 'replace';
+    const imageIndex = req.body.imageIndex === undefined ? 0 : Number(req.body.imageIndex);
     if (target !== 'hero' && target !== 'product') return sendJson(res, 400, { ok: false, message: 'Tujuan upload tidak valid.' });
     if (target === 'product' && (typeof productId !== 'string' || !/^[a-z0-9_-]{1,64}$/i.test(productId))) return sendJson(res, 400, { ok: false, message: 'ID produk tidak valid.' });
+    if (target === 'product' && !['replace', 'add'].includes(operation)) return sendJson(res, 400, { ok: false, message: 'Aksi foto tidak valid.' });
+    if (target === 'product' && operation === 'replace' && (!Number.isInteger(imageIndex) || imageIndex < 0 || imageIndex >= MAX_IMAGES_PER_PRODUCT)) return sendJson(res, 400, { ok: false, message: 'Nomor foto tidak valid.' });
     if (typeof dataUrl !== 'string' || dataUrl.length > 2900000) return sendJson(res, 413, { ok: false, message: 'Ukuran foto maksimal 2 MB.' });
     const match = dataUrl.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
     if (!match) return sendJson(res, 400, { ok: false, message: 'Gunakan gambar JPG, PNG, atau WebP.' });
@@ -99,14 +118,28 @@ module.exports = async function handler(req, res) {
     const bytes = Buffer.from(base64, 'base64');
     if (!bytes.length || bytes.length > 2 * 1024 * 1024) return sendJson(res, 413, { ok: false, message: 'Ukuran foto maksimal 2 MB.' });
     const ext = mime === 'image/jpeg' ? 'jpg' : mime === 'image/png' ? 'png' : 'webp';
-    const label = target === 'hero' ? 'hero' : productId;
-    const path = `assets/admin-${label}-${Date.now()}.${ext}`;
-    await putEncodedFile(path, bytes.toString('base64'), `Upload ${label} image from EGYA DURIAN Admin`);
+    const safeLabel = target === 'hero' ? 'hero' : productId.toLowerCase();
+    const assetPath = `assets/admin-${safeLabel}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
+    // Validate the target HTML and the exact gallery slot before uploading the asset.
     const file = await getFile('index.html');
-    const html = target === 'hero' ? replaceHeroImage(file.content, path) : replaceProductImage(file.content, productId, path);
-    await putFile('index.html', html, `Update ${label} image from EGYA DURIAN Admin`, file.sha);
-    return sendJson(res, 200, { ok: true, path, message: 'Foto diunggah dan website diperbarui. Vercel akan menerbitkannya otomatis.' });
+    let updatedHtml;
+    let imagesCount = null;
+    if (target === 'hero') updatedHtml = replaceHeroImage(file.content, assetPath);
+    else {
+      const result = updateProductImageList(file.content, productId, assetPath, operation, imageIndex);
+      updatedHtml = result.html;
+      imagesCount = result.imagesCount;
+    }
+
+    await putEncodedFile(assetPath, bytes.toString('base64'), `${operation === 'add' ? 'Add' : 'Replace'} ${safeLabel} image from EGYA DURIAN Admin`);
+    await putFile('index.html', updatedHtml, `Update ${safeLabel} image from EGYA DURIAN Admin`, file.sha);
+    const message = target === 'hero'
+      ? 'Banner berhasil diperbarui. Vercel akan menerbitkannya otomatis.'
+      : (operation === 'add'
+        ? `Foto berhasil ditambahkan ke galeri produk (${imagesCount} foto). Vercel akan menerbitkannya otomatis.`
+        : `Foto ${imageIndex + 1} berhasil diganti${imageIndex === 0 ? ' dan menjadi foto utama pada card produk' : ' pada galeri produk'}. Vercel akan menerbitkannya otomatis.`);
+    return sendJson(res, 200, { ok: true, path: assetPath, imagesCount, message });
   } catch (error) {
     const status = error.status === 409 || error.status === 422 ? 409 : (error.status || 500);
     return sendJson(res, status, { ok: false, message: error.message || 'Upload gagal.' });

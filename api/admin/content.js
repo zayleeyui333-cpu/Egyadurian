@@ -167,6 +167,13 @@ function productDataFromBlock(block, id) {
   const badgeOpen = (block.match(/<span\b[^>]*class=["'][^"']*\bproduct-badge\b[^"']*["'][^>]*>/i) || [''])[0];
   const badgeTokens = classTokens(badgeOpen).filter(token => token !== 'product-badge');
   const imageOpen = (block.match(/<img\b[^>]*class=["'][^"']*\bproduct-image\b[^"']*["'][^>]*>/i) || [''])[0];
+  const primaryImage = getAttribute(imageOpen, 'src');
+  let images = [];
+  try {
+    const parsed = JSON.parse(getAttribute(card.openTag, 'data-images') || '[]');
+    if (Array.isArray(parsed)) images = parsed.filter(item => typeof item === 'string' && item.trim()).slice(0, 10);
+  } catch { images = []; }
+  if (!images.length && primaryImage) images = [primaryImage];
   return {
     id,
     name: plainText(tagValue(block, 'h3')),
@@ -175,7 +182,8 @@ function productDataFromBlock(block, id) {
     category: CATEGORIES[getAttribute(card.openTag, 'data-category')] ? getAttribute(card.openTag, 'data-category') : 'lainnya',
     oldPrice: amountFromText(tagValue(block, 'p', 'old-price')),
     price: amountFromText(tagValue(block, 'p', 'price')),
-    image: getAttribute(imageOpen, 'src'),
+    image: images[0] || primaryImage,
+    images,
   };
 }
 function extractAllDivsByClass(source, className) {
