@@ -206,6 +206,9 @@ function getAdminData(html) {
   const productsSection = getRegion(html, /<section\b(?=[^>]*\bid=["']products["'])[\s\S]*?<\/section>/i, 'products').text;
   const gallerySection = getRegion(html, /<section\b(?=[^>]*\bid=["']gallery["'])[\s\S]*?<\/section>/i, 'gallery website').text;
   const gallery = extractGalleryImages(gallerySection);
+  const galleryVideoInfo = extractGalleryVideoInfo(gallerySection);
+  const galleryVideo = galleryVideoInfo.active;
+  const galleryVideoArchive = galleryVideoInfo.archived;
 
   const phoneParagraph = (contact.match(/<p\b[^>]*>\s*📞[\s\S]*?<\/p>/i) || [''])[0];
   const phones = (plainText(phoneParagraph).match(/\+?\d[\d ()-]{6,}\d/g) || []).map(value => value.trim());
@@ -246,6 +249,8 @@ function getAdminData(html) {
     products,
     testimonials,
     gallery,
+    galleryVideo,
+    galleryVideoArchive,
   };
 }
 function extractGalleryImages(gallerySection) {
@@ -259,6 +264,71 @@ function extractGalleryImages(gallerySection) {
   }
   return images;
 }
+function extractGalleryVideoInfo(gallerySection) {
+  const grid = findElementByClass(gallerySection, 'div', 'gallery-grid');
+  if (!grid) throw new Error('Daftar media pada Galeri EGYA DURIAN tidak ditemukan.');
+  const result = { active: '', archived: '' };
+  for (const videoMatch of grid.inner.matchAll(/<video\b[^>]*>[\s\S]*?<\/video>/gi)) {
+    const whole = videoMatch[0];
+    const videoOpen = (whole.match(/^<video\b[^>]*>/i) || [''])[0];
+    const sourceMatch = whole.match(/<source\b[^>]*>/i);
+    const src = (sourceMatch ? getAttribute(sourceMatch[0], 'src') : getAttribute(videoOpen, 'src')).trim();
+    if (!src) continue;
+    const classes = classTokens(videoOpen);
+    const archived = getAttribute(videoOpen, 'data-admin-gallery-hidden') === 'true' || /\bhidden(?:\s|=|>)/i.test(videoOpen) || classes.includes('gallery-video-archived');
+    if (archived && !result.archived) result.archived = src;
+    else if (!archived && classes.includes('gallery-item') && !result.active) result.active = src;
+  }
+  return result;
+}
+function removeAttribute(openTag, name) {
+  const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const pattern = new RegExp(`\\s+${escapedName}(?:\\s*=\\s*(?:"[^"]*"|'[^']*'|[^\\s>]+))?`, 'i');
+  return openTag.replace(pattern, '');
+}
+function updateGalleryVideoSection(section, activeVideoPath, archivedVideoPath) {
+  const grid = findElementByClass(section, 'div', 'gallery-grid');
+  if (!grid) throw new Error('Daftar media pada Galeri EGYA DURIAN tidak ditemukan.');
+  const videoPattern = /<video\b[^>]*>[\s\S]*?<\/video>/gi;
+  const existingVideos = [...grid.inner.matchAll(videoPattern)].map(match => match[0]);
+  let nextInner = grid.inner;
+  const targetPath = activeVideoPath || archivedVideoPath || '';
+  if (!targetPath) {
+    nextInner = nextInner.replace(videoPattern, '').replace(/\n{3,}/g, '\n\n').trim();
+  } else {
+    const ext = (String(targetPath).match(/\.([a-z0-9]+)(?:[?#].*)?$/i) || ['', 'mp4'])[1].toLowerCase();
+    const mime = ext === 'webm' ? 'video/webm' : ((ext === 'ogg' || ext === 'ogv') ? 'video/ogg' : 'video/mp4');
+    const archived = !activeVideoPath;
+    let videoMarkup = existingVideos[0] || '';
+    if (videoMarkup) {
+      const videoOpen = (videoMarkup.match(/^<video\b[^>]*>/i) || [''])[0];
+      let nextOpen = setAttribute(videoOpen, 'class', archived ? 'gallery-video-archived' : 'gallery-item');
+      if (archived) {
+        // Add boolean hidden before the longer data attribute to avoid partial-name matching.
+        nextOpen = setAttribute(nextOpen, 'hidden', '');
+        nextOpen = setAttribute(nextOpen, 'data-admin-gallery-hidden', 'true');
+      } else {
+        nextOpen = removeAttribute(removeAttribute(nextOpen, 'hidden'), 'data-admin-gallery-hidden');
+      }
+      videoMarkup = videoMarkup.replace(videoOpen, nextOpen);
+      if (/<source\b[^>]*>/i.test(videoMarkup)) {
+        videoMarkup = videoMarkup.replace(/<source\b[^>]*>/i, sourceTag => setAttribute(setAttribute(sourceTag, 'src', targetPath), 'type', mime));
+      } else {
+        videoMarkup = videoMarkup.replace(/<\/video>/i, `<source src="${htmlEscape(targetPath)}" type="${mime}">\n\n</video>`);
+      }
+      nextInner = nextInner.replace(videoPattern, '').trimEnd();
+      nextInner = `${nextInner}${nextInner ? '\n\n' : ''}${videoMarkup}`;
+    } else {
+      const openAttrs = archived ? 'class="gallery-video-archived" data-admin-gallery-hidden="true" hidden' : 'class="gallery-item"';
+      videoMarkup = `<video ${openAttrs} playsinline preload="metadata" muted>\n\n<source src="${htmlEscape(targetPath)}" type="${mime}">\n\nBrowser Anda tidak mendukung video.\n\n</video>`;
+      nextInner = `${nextInner.trimEnd()}${nextInner.trim() ? '\n\n' : ''}${videoMarkup}`;
+    }
+  }
+  const innerStart = grid.start + grid.openTag.length;
+  const innerEnd = grid.end - grid.closeTag.length;
+  return section.slice(0, innerStart) + nextInner + section.slice(innerEnd);
+}
+
 function updateGallerySection(section, submittedGallery) {
   const grid = findElementByClass(section, 'div', 'gallery-grid');
   if (!grid) throw new Error('Daftar foto pada Galeri EGYA DURIAN tidak ditemukan.');
@@ -442,6 +512,11 @@ function updateContent(html, submitted) {
     const block = updateGallerySection(region.text, input.gallery);
     updated = updated.slice(0, region.start) + block + updated.slice(region.end);
   }
+  if (input.galleryVideo !== null && input.galleryVideoArchive !== null && (input.galleryVideo !== current.galleryVideo || input.galleryVideoArchive !== current.galleryVideoArchive)) {
+    const region = getRegion(updated, /<section\b(?=[^>]*\bid=["']gallery["'])[\s\S]*?<\/section>/i, 'gallery website');
+    const block = updateGalleryVideoSection(region.text, input.galleryVideo, input.galleryVideoArchive);
+    updated = updated.slice(0, region.start) + block + updated.slice(region.end);
+  }
 
   return updated;
 }
@@ -476,6 +551,17 @@ function validatePayload(value) {
       return path;
     });
   }
+  const validateVideoPath = (input, label) => {
+    if (input === undefined) return null;
+    if (input === '') return '';
+    if (typeof input !== 'string' || input.length > 180 || !/^assets\/[A-Za-z0-9._/-]+\.(?:mp4|webm|ogv|ogg|m4v)$/i.test(input) || input.includes('..') || input.includes('//')) {
+      throw new Error(`Path ${label} tidak valid.`);
+    }
+    return input;
+  };
+  const galleryVideo = validateVideoPath(value.galleryVideo, 'video Galeri website');
+  const galleryVideoArchive = validateVideoPath(value.galleryVideoArchive, 'video arsip Galeri website');
+  if (galleryVideo && galleryVideoArchive) throw new Error('Video galeri tidak boleh aktif dan diarsipkan sekaligus.');
   const seenIds = new Set();
   const products = value.products.map((product, index) => {
     if (!product || typeof product.id !== 'string' || !/^[a-z0-9_-]{1,64}$/i.test(product.id)) throw new Error(`ID produk ${index + 1} tidak valid.`);
@@ -522,6 +608,8 @@ function validatePayload(value) {
       name: text(item?.name, `Nama testimoni ${index + 1}`, 80),
     })),
     gallery,
+    galleryVideo,
+    galleryVideoArchive,
   };
 }
 
