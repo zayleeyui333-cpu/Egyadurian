@@ -104,11 +104,12 @@ module.exports = async function handler(req, res) {
 
   try {
     const { target, productId, dataUrl } = req.body || {};
-    const operation = target === 'product' ? (req.body.operation || 'replace') : 'replace';
+    const operation = target === 'product' ? (req.body.operation || 'replace') : (target === 'gallery' ? (req.body.operation || 'stage') : 'replace');
     const imageIndex = req.body.imageIndex === undefined ? 0 : Number(req.body.imageIndex);
-    if (target !== 'hero' && target !== 'product') return sendJson(res, 400, { ok: false, message: 'Tujuan upload tidak valid.' });
+    if (!['hero', 'product', 'gallery'].includes(target)) return sendJson(res, 400, { ok: false, message: 'Tujuan upload tidak valid.' });
     if (target === 'product' && (typeof productId !== 'string' || !/^[a-z0-9_-]{1,64}$/i.test(productId))) return sendJson(res, 400, { ok: false, message: 'ID produk tidak valid.' });
     if (target === 'product' && !['replace', 'add'].includes(operation)) return sendJson(res, 400, { ok: false, message: 'Aksi foto tidak valid.' });
+    if (target === 'gallery' && operation !== 'stage') return sendJson(res, 400, { ok: false, message: 'Aksi foto galeri website tidak valid.' });
     if (target === 'product' && operation === 'replace' && (!Number.isInteger(imageIndex) || imageIndex < 0 || imageIndex >= MAX_IMAGES_PER_PRODUCT)) return sendJson(res, 400, { ok: false, message: 'Nomor foto tidak valid.' });
     if (typeof dataUrl !== 'string' || dataUrl.length > 2900000) return sendJson(res, 413, { ok: false, message: 'Ukuran foto maksimal 2 MB.' });
     const match = dataUrl.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
@@ -118,8 +119,14 @@ module.exports = async function handler(req, res) {
     const bytes = Buffer.from(base64, 'base64');
     if (!bytes.length || bytes.length > 2 * 1024 * 1024) return sendJson(res, 413, { ok: false, message: 'Ukuran foto maksimal 2 MB.' });
     const ext = mime === 'image/jpeg' ? 'jpg' : mime === 'image/png' ? 'png' : 'webp';
-    const safeLabel = target === 'hero' ? 'hero' : productId.toLowerCase();
+    const safeLabel = target === 'hero' ? 'hero' : (target === 'gallery' ? 'gallery' : productId.toLowerCase());
     const assetPath = `assets/admin-${safeLabel}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+    // Gallery uploads are staged first; the main Save button adds their paths to the dedicated website gallery.
+    if (target === 'gallery') {
+      await putEncodedFile(assetPath, bytes.toString('base64'), 'Upload staged EGYA DURIAN website gallery image');
+      return sendJson(res, 200, { ok: true, path: assetPath, message: 'Foto berhasil diunggah ke GitHub sebagai draf. Tekan Simpan Perubahan untuk menampilkannya di Galeri EGYA DURIAN.' });
+    }
 
     // Validate the target HTML and the exact gallery slot before uploading the asset.
     const file = await getFile('index.html');

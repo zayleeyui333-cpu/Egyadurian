@@ -204,6 +204,8 @@ function getAdminData(html) {
   const promo = getRegion(html, /<section\s+class="promo-slider">[\s\S]*?<\/section>/i, 'promo slider').text;
   const testimonial = getRegion(html, /<section\b(?=[^>]*\bid=["']testimonials["'])[\s\S]*?<\/section>/i, 'testimonials').text;
   const productsSection = getRegion(html, /<section\b(?=[^>]*\bid=["']products["'])[\s\S]*?<\/section>/i, 'products').text;
+  const gallerySection = getRegion(html, /<section\b(?=[^>]*\bid=["']gallery["'])[\s\S]*?<\/section>/i, 'gallery website').text;
+  const gallery = extractGalleryImages(gallerySection);
 
   const phoneParagraph = (contact.match(/<p\b[^>]*>\s*📞[\s\S]*?<\/p>/i) || [''])[0];
   const phones = (plainText(phoneParagraph).match(/\+?\d[\d ()-]{6,}\d/g) || []).map(value => value.trim());
@@ -243,7 +245,40 @@ function getAdminData(html) {
     promos,
     products,
     testimonials,
+    gallery,
   };
+}
+function extractGalleryImages(gallerySection) {
+  const grid = findElementByClass(gallerySection, 'div', 'gallery-grid');
+  if (!grid) throw new Error('Daftar foto pada Galeri EGYA DURIAN tidak ditemukan.');
+  const images = [];
+  for (const match of grid.inner.matchAll(/<img\b[^>]*>/gi)) {
+    if (!classTokens(match[0]).includes('gallery-item')) continue;
+    const src = getAttribute(match[0], 'src').trim();
+    if (src) images.push(src);
+  }
+  return images;
+}
+function updateGallerySection(section, submittedGallery) {
+  const grid = findElementByClass(section, 'div', 'gallery-grid');
+  if (!grid) throw new Error('Daftar foto pada Galeri EGYA DURIAN tidak ditemukan.');
+  const validPaths = submittedGallery.map(path => String(path));
+  let imageIndex = 0;
+  const oldGalleryImages = [...grid.inner.matchAll(/<img\b[^>]*>/gi)].filter(match => classTokens(match[0]).includes('gallery-item'));
+  let inner = grid.inner.replace(/<img\b[^>]*>/gi, tag => {
+    if (!classTokens(tag).includes('gallery-item')) return tag;
+    const path = validPaths[imageIndex++];
+    return path ? `<img src="${htmlEscape(path)}" class="gallery-item" alt="Galeri EGYA DURIAN">` : '';
+  });
+  if (validPaths.length > oldGalleryImages.length) {
+    const additions = validPaths.slice(oldGalleryImages.length).map(path => `<img src="${htmlEscape(path)}" class="gallery-item" alt="Galeri EGYA DURIAN">`).join('\n\n');
+    const videoMatch = inner.match(/<video\b/i);
+    if (videoMatch) inner = `${inner.slice(0, videoMatch.index)}${additions}\n\n${inner.slice(videoMatch.index)}`;
+    else inner = `${inner.trimEnd()}\n\n${additions}`;
+  }
+  const innerStart = grid.start + grid.openTag.length;
+  const innerEnd = grid.end - grid.closeTag.length;
+  return section.slice(0, innerStart) + inner + section.slice(innerEnd);
 }
 function setProductCardAttributes(block, product, extraAttributes = {}) {
   const match = block.match(/<div\b(?=[^>]*\bclass=["'][^"']*\bproduct-card\b[^"']*["'])[^>]*>/i);
@@ -402,6 +437,12 @@ function updateContent(html, submitted) {
     updated = updated.slice(0, region.start) + block + updated.slice(region.end);
   }
 
+  if (input.gallery !== null && (input.gallery.length !== current.gallery.length || input.gallery.some((path, index) => path !== current.gallery[index]))) {
+    const region = getRegion(updated, /<section\b(?=[^>]*\bid=["']gallery["'])[\s\S]*?<\/section>/i, 'gallery website');
+    const block = updateGallerySection(region.text, input.gallery);
+    updated = updated.slice(0, region.start) + block + updated.slice(region.end);
+  }
+
   return updated;
 }
 function validatePayload(value) {
@@ -425,6 +466,16 @@ function validatePayload(value) {
   if (!Array.isArray(value.promos) || value.promos.length < 1 || value.promos.length > 20) throw new Error('Jumlah promo harus antara 1 sampai 20.');
   if (!Array.isArray(value.products) || value.products.length < 1 || value.products.length > 50) throw new Error('Jumlah produk harus antara 1 sampai 50.');
   if (!Array.isArray(value.testimonials) || value.testimonials.length > 30) throw new Error('Jumlah testimoni maksimal 30.');
+  let gallery = null;
+  if (value.gallery !== undefined) {
+    if (!Array.isArray(value.gallery) || value.gallery.length > 30) throw new Error('Galeri website boleh berisi maksimal 30 foto.');
+    gallery = value.gallery.map((path, index) => {
+      if (typeof path !== 'string' || path.length > 180 || !/^assets\/[A-Za-z0-9._/-]+\.(?:jpe?g|png|webp|gif)$/i.test(path) || path.includes('..') || path.includes('//')) {
+        throw new Error(`Path foto Galeri website nomor ${index + 1} tidak valid.`);
+      }
+      return path;
+    });
+  }
   const seenIds = new Set();
   const products = value.products.map((product, index) => {
     if (!product || typeof product.id !== 'string' || !/^[a-z0-9_-]{1,64}$/i.test(product.id)) throw new Error(`ID produk ${index + 1} tidak valid.`);
@@ -470,6 +521,7 @@ function validatePayload(value) {
       text: text(item?.text, `Isi testimoni ${index + 1}`, 300),
       name: text(item?.name, `Nama testimoni ${index + 1}`, 80),
     })),
+    gallery,
   };
 }
 
