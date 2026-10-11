@@ -1,0 +1,9 @@
+{
+  "name": "egyadurian-admin-video-upload",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "dependencies": {
+    "@vercel/blob": "2.8.1"
+  }
+}

@@ -286,44 +286,52 @@ function removeAttribute(openTag, name) {
   const pattern = new RegExp(`\\s+${escapedName}(?:\\s*=\\s*(?:"[^"]*"|'[^']*'|[^\\s>]+))?`, 'i');
   return openTag.replace(pattern, '');
 }
+function videoMimeForPath(videoPath) {
+  let pathname = String(videoPath || '').split('?')[0].split('#')[0];
+  try { pathname = new URL(pathname).pathname; } catch { /* assets/relative path */ }
+  return /\.webm$/i.test(pathname) ? 'video/webm' : (/\.(?:ogv|ogg)$/i.test(pathname) ? 'video/ogg' : 'video/mp4');
+}
+function updateVideoMarkup(template, videoPath, archived) {
+  const mime = videoMimeForPath(videoPath);
+  let markup = template || `<video class="${archived ? 'gallery-video-archived' : 'gallery-item'}" playsinline preload="metadata" muted><source src="${htmlEscape(videoPath)}" type="${mime}">Browser Anda tidak mendukung video.</video>`;
+  const videoOpen = (markup.match(/^<video\b[^>]*>/i) || [''])[0];
+  if (!videoOpen) throw new Error('Elemen video Galeri EGYA DURIAN tidak valid.');
+  let nextOpen = setAttribute(videoOpen, 'class', archived ? 'gallery-video-archived' : 'gallery-item');
+  if (archived) {
+    nextOpen = setAttribute(nextOpen, 'hidden', '');
+    nextOpen = setAttribute(nextOpen, 'data-admin-gallery-hidden', 'true');
+  } else {
+    nextOpen = removeAttribute(removeAttribute(nextOpen, 'hidden'), 'data-admin-gallery-hidden');
+  }
+  markup = markup.replace(videoOpen, nextOpen);
+  const sourcePattern = /<source\b[^>]*>/i;
+  if (sourcePattern.test(markup)) {
+    markup = markup.replace(sourcePattern, sourceTag => setAttribute(setAttribute(sourceTag, 'src', videoPath), 'type', mime));
+  } else {
+    markup = markup.replace(/<\/video>/i, `<source src="${htmlEscape(videoPath)}" type="${mime}"></video>`);
+  }
+  return markup;
+}
 function updateGalleryVideoSection(section, activeVideoPath, archivedVideoPath) {
   const grid = findElementByClass(section, 'div', 'gallery-grid');
   if (!grid) throw new Error('Daftar media pada Galeri EGYA DURIAN tidak ditemukan.');
   const videoPattern = /<video\b[^>]*>[\s\S]*?<\/video>/gi;
   const existingVideos = [...grid.inner.matchAll(videoPattern)].map(match => match[0]);
-  let nextInner = grid.inner;
-  const targetPath = activeVideoPath || archivedVideoPath || '';
-  if (!targetPath) {
-    nextInner = nextInner.replace(videoPattern, '').replace(/\n{3,}/g, '\n\n').trim();
-  } else {
-    const ext = (String(targetPath).match(/\.([a-z0-9]+)(?:[?#].*)?$/i) || ['', 'mp4'])[1].toLowerCase();
-    const mime = ext === 'webm' ? 'video/webm' : ((ext === 'ogg' || ext === 'ogv') ? 'video/ogg' : 'video/mp4');
-    const archived = !activeVideoPath;
-    let videoMarkup = existingVideos[0] || '';
-    if (videoMarkup) {
-      const videoOpen = (videoMarkup.match(/^<video\b[^>]*>/i) || [''])[0];
-      let nextOpen = setAttribute(videoOpen, 'class', archived ? 'gallery-video-archived' : 'gallery-item');
-      if (archived) {
-        // Add boolean hidden before the longer data attribute to avoid partial-name matching.
-        nextOpen = setAttribute(nextOpen, 'hidden', '');
-        nextOpen = setAttribute(nextOpen, 'data-admin-gallery-hidden', 'true');
-      } else {
-        nextOpen = removeAttribute(removeAttribute(nextOpen, 'hidden'), 'data-admin-gallery-hidden');
-      }
-      videoMarkup = videoMarkup.replace(videoOpen, nextOpen);
-      if (/<source\b[^>]*>/i.test(videoMarkup)) {
-        videoMarkup = videoMarkup.replace(/<source\b[^>]*>/i, sourceTag => setAttribute(setAttribute(sourceTag, 'src', targetPath), 'type', mime));
-      } else {
-        videoMarkup = videoMarkup.replace(/<\/video>/i, `<source src="${htmlEscape(targetPath)}" type="${mime}">\n\n</video>`);
-      }
-      nextInner = nextInner.replace(videoPattern, '').trimEnd();
-      nextInner = `${nextInner}${nextInner ? '\n\n' : ''}${videoMarkup}`;
-    } else {
-      const openAttrs = archived ? 'class="gallery-video-archived" data-admin-gallery-hidden="true" hidden' : 'class="gallery-item"';
-      videoMarkup = `<video ${openAttrs} playsinline preload="metadata" muted>\n\n<source src="${htmlEscape(targetPath)}" type="${mime}">\n\nBrowser Anda tidak mendukung video.\n\n</video>`;
-      nextInner = `${nextInner.trimEnd()}${nextInner.trim() ? '\n\n' : ''}${videoMarkup}`;
-    }
-  }
+  const details = existingVideos.map(markup => {
+    const open = (markup.match(/^<video\b[^>]*>/i) || [''])[0];
+    const classes = classTokens(open);
+    const hidden = getAttribute(open, 'data-admin-gallery-hidden') === 'true' || /\bhidden(?:\s|=|>)/i.test(open) || classes.includes('gallery-video-archived');
+    const source = (markup.match(/<source\b[^>]*>/i) || [''])[0];
+    const path = (source ? getAttribute(source, 'src') : getAttribute(open, 'src')).trim();
+    return { markup, hidden, path };
+  });
+  const activeTemplate = details.find(video => !video.hidden) || details[0] || null;
+  const archivedTemplate = details.find(video => video.hidden) || activeTemplate;
+  const pieces = [];
+  if (activeVideoPath) pieces.push(updateVideoMarkup(activeTemplate ? activeTemplate.markup : '', activeVideoPath, false));
+  if (archivedVideoPath) pieces.push(updateVideoMarkup(archivedTemplate ? archivedTemplate.markup : (activeTemplate ? activeTemplate.markup : ''), archivedVideoPath, true));
+  let nextInner = grid.inner.replace(videoPattern, '').trimEnd();
+  if (pieces.length) nextInner = `${nextInner}${nextInner ? '\n\n' : ''}${pieces.join('\n\n')}`;
   const innerStart = grid.start + grid.openTag.length;
   const innerEnd = grid.end - grid.closeTag.length;
   return section.slice(0, innerStart) + nextInner + section.slice(innerEnd);
@@ -554,14 +562,24 @@ function validatePayload(value) {
   const validateVideoPath = (input, label) => {
     if (input === undefined) return null;
     if (input === '') return '';
-    if (typeof input !== 'string' || input.length > 180 || !/^assets\/[A-Za-z0-9._/-]+\.(?:mp4|webm|ogv|ogg|m4v)$/i.test(input) || input.includes('..') || input.includes('//')) {
-      throw new Error(`Path ${label} tidak valid.`);
+    if (typeof input !== 'string' || input.length > 2048) throw new Error(`Path ${label} tidak valid.`);
+    const isAssetPath = /^assets\/[A-Za-z0-9._/-]+\.(?:mp4|webm|ogv|ogg|m4v)$/i.test(input) && !input.includes('..') && !input.includes('//');
+    let isPublicBlobUrl = false;
+    if (/^https:\/\//i.test(input)) {
+      try {
+        const url = new URL(input);
+        const safeHost = /^[a-z0-9-]+\.public\.blob\.vercel-storage\.com$/i.test(url.hostname);
+        const safePath = /^\/egyadurian-gallery-videos\/[A-Za-z0-9._/-]+\.(?:mp4|webm|ogv|ogg)$/i.test(url.pathname)
+          && !url.pathname.includes('..') && !url.pathname.includes('//');
+        isPublicBlobUrl = url.protocol === 'https:' && safeHost && safePath && !url.username && !url.password && !url.port && !url.search && !url.hash;
+      } catch { isPublicBlobUrl = false; }
     }
+    if (!isAssetPath && !isPublicBlobUrl) throw new Error(`Path ${label} tidak valid. Gunakan file assets yang ada atau video dari Vercel Blob. `);
     return input;
   };
   const galleryVideo = validateVideoPath(value.galleryVideo, 'video Galeri website');
   const galleryVideoArchive = validateVideoPath(value.galleryVideoArchive, 'video arsip Galeri website');
-  if (galleryVideo && galleryVideoArchive) throw new Error('Video galeri tidak boleh aktif dan diarsipkan sekaligus.');
+  if (galleryVideo && galleryVideoArchive && galleryVideo === galleryVideoArchive) throw new Error('Video aktif dan video arsip tidak boleh menunjuk ke file yang sama.');
   const seenIds = new Set();
   const products = value.products.map((product, index) => {
     if (!product || typeof product.id !== 'string' || !/^[a-z0-9_-]{1,64}$/i.test(product.id)) throw new Error(`ID produk ${index + 1} tidak valid.`);

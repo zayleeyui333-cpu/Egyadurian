@@ -27,6 +27,7 @@
     .popup-card button{width:100%;margin-top:21px}
     @keyframes popup-in{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
     @media(max-width:650px){.promo-editor-row{grid-column:auto;grid-template-columns:minmax(0,1fr) auto}.popup-card{padding:23px 18px 18px}}
+
     .photo-manager{margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff}
     .photo-manager-title{font-size:13px;font-weight:800;margin:0 0 4px}
     .photo-manager-note{font-size:12px;color:var(--muted);margin:0 0 10px}
@@ -54,7 +55,13 @@
     .site-gallery-video-panel{margin-top:14px;border:1px solid var(--line);border-radius:12px;padding:12px;background:#fbfcfb;max-width:560px}
     .site-gallery-video-preview{display:block;width:100%;max-height:300px;border-radius:9px;background:#101010;margin:9px 0}
     .site-gallery-video-panel .photo-path{margin:7px 0 10px}
-    @media(max-width:650px){.site-gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.gallery-upload-row{align-items:stretch;flex-direction:column}.gallery-upload-row .field{min-width:0}.site-gallery-video-panel{max-width:none}}
+    .site-gallery-video-upload{margin-top:14px;border:1px dashed #b9cbbb;border-radius:13px;padding:14px;background:#f8fbf8}
+    .site-gallery-video-upload h3{margin:0 0 6px;font-size:15px}
+    .site-gallery-video-upload .field{margin-top:10px}
+    .site-gallery-video-upload .upload-row{margin-top:10px}
+    .video-upload-progress{display:none;margin-top:10px;padding:9px 11px;border-radius:9px;background:#edf2ed;color:#24492e;font-size:12px;overflow-wrap:anywhere}
+    .video-upload-progress.show{display:block}
+    @media(max-width:650px){.site-gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.gallery-upload-row{align-items:stretch;flex-direction:column}.gallery-upload-row .field{min-width:0}.site-gallery-video-panel{max-width:none}.site-gallery-video-upload{padding:11px}}
 
   </style>
 </head>
@@ -117,8 +124,11 @@
     let persistedProductIds = new Set();
     let persistedGalleryVideoPath = '';
     let persistedGalleryVideoArchivePath = '';
+    let pendingGalleryVideoUrl = '';
+    let blobClientUploadPromise = null;
     const pendingProductFiles = new Map();
     const MAX_PRODUCT_IMAGES = 10;
+    const MAX_VIDEO_BYTES = 500 * 1024 * 1024;
 
     const CATEGORY_OPTIONS = [
       ['musang', 'Musang King'], ['blackthorn', 'Black Thorn'], ['monthong', 'Monthong'],
@@ -252,27 +262,38 @@
         </article>`).join('');
       const galleryVideoPath = typeof data.galleryVideo === 'string' ? data.galleryVideo : '';
       const galleryVideoArchivePath = typeof data.galleryVideoArchive === 'string' ? data.galleryVideoArchive : '';
-      const galleryVideo = galleryVideoPath ? `
+      const galleryVideoPending = Boolean(pendingGalleryVideoUrl && galleryVideoPath === pendingGalleryVideoUrl);
+      const videoMimeForPath = path => {
+        const pathname = String(path || '').split('?')[0].split('#')[0];
+        return /\.webm$/i.test(pathname) ? 'video/webm' : (/\.(?:ogv|ogg)$/i.test(pathname) ? 'video/ogg' : 'video/mp4');
+      };
+      const galleryVideoActivePanel = galleryVideoPath ? `
         <div class="site-gallery-video-panel">
-          <strong style="display:block">Video Galeri EGYA DURIAN · Aktif</strong>
+          <strong style="display:block">${galleryVideoPending ? 'Video baru · Belum diterapkan' : 'Video Galeri EGYA DURIAN · Aktif'}</strong>
           <video class="site-gallery-video-preview" controls playsinline preload="metadata" muted>
-            <source src="${esc(galleryVideoPath)}" type="${/\.webm(?:$|\?)/i.test(galleryVideoPath) ? 'video/webm' : (/\.(?:ogv|ogg)(?:$|\?)/i.test(galleryVideoPath) ? 'video/ogg' : 'video/mp4')}">
+            <source src="${esc(galleryVideoPath)}" type="${videoMimeForPath(galleryVideoPath)}">
             Browser Anda tidak mendukung video.
           </video>
           <div class="photo-path">${esc(galleryVideoPath)}</div>
           <button class="danger" type="button" data-action="remove-gallery-video">Hapus Video dari Galeri</button>
-          <p class="notice">Video akan disembunyikan dari galeri publik setelah Simpan Perubahan. File asli tetap tersimpan di assets dan dapat ditampilkan kembali.</p>
-        </div>` : (galleryVideoArchivePath ? `
-        <div class="site-gallery-video-panel">
-          <strong style="display:block">Video Galeri EGYA DURIAN · Tidak Aktif</strong>
-          <p class="muted">Video sudah disembunyikan dari galeri publik, tetapi file aslinya tetap tersimpan.</p>
-          <div class="photo-path">${esc(galleryVideoArchivePath)}</div>
-          <button class="secondary" type="button" data-action="restore-gallery-video">Tampilkan Kembali Video</button>
+          <p class="notice">${galleryVideoPending ? 'Video baru sudah diunggah ke penyimpanan, tetapi belum menggantikan video publik. Tekan Simpan Perubahan untuk mengaktifkannya.' : 'Video aktif tampil kepada pengunjung. Menghapusnya dari galeri tidak menghapus file aslinya.'}</p>
         </div>` : `
         <div class="site-gallery-video-panel">
-          <strong style="display:block">Video Galeri EGYA DURIAN</strong>
-          <p class="muted">Saat ini tidak ada video yang ditampilkan atau tersimpan sebagai video arsip di bagian galeri website.</p>
-        </div>`);
+          <strong style="display:block">Video Galeri EGYA DURIAN · Tidak ada video aktif</strong>
+          <p class="muted">Tidak ada video yang sedang ditampilkan di galeri publik.</p>
+        </div>`;
+      const galleryVideoArchivePanel = galleryVideoArchivePath ? `
+        <div class="site-gallery-video-panel">
+          <strong style="display:block">Video sebelumnya · Tersimpan</strong>
+          <video class="site-gallery-video-preview" controls playsinline preload="metadata" muted>
+            <source src="${esc(galleryVideoArchivePath)}" type="${videoMimeForPath(galleryVideoArchivePath)}">
+            Browser Anda tidak mendukung video.
+          </video>
+          <div class="photo-path">${esc(galleryVideoArchivePath)}</div>
+          <button class="secondary" type="button" data-action="restore-gallery-video">Jadikan Video Ini Aktif</button>
+          <p class="notice">Video ini disembunyikan dari galeri publik. Klik tombol di atas untuk menukar video aktif dengan video ini.</p>
+        </div>` : '';
+      const galleryVideo = galleryVideoActivePanel + galleryVideoArchivePanel;
       $('#editor').innerHTML = `
         <section class="section-card"><div class="section-heading"><div><div class="section-label">Kontak toko</div><h2>Informasi yang dilihat pelanggan</h2></div></div><div class="form-grid">
           ${field('Lokasi / alamat singkat', 'contact-location', c.location)}
@@ -298,7 +319,21 @@
           ${galleryVideo}
           <input type="hidden" id="siteGalleryVideoPath" value="${esc(galleryVideoPath)}">
           <input type="hidden" id="siteGalleryVideoArchivePath" value="${esc(galleryVideoArchivePath)}">
-          <p class="notice">Penghapusan foto atau video baru diterapkan saat tombol Simpan Perubahan ditekan. Foto/video asli tetap disimpan di folder assets.</p>
+          <div class="site-gallery-video-upload">
+            <h3>Unggah atau Ganti Video Galeri</h3>
+            <p class="muted">Pilih video MP4, WebM, atau OGG. File diunggah langsung ke Vercel Blob, tidak melewati batas unggah gambar 2 MB.</p>
+            <div class="field">
+              <label for="siteGalleryVideoFile">Pilih video dari PC atau HP</label>
+              <input class="file-input" id="siteGalleryVideoFile" type="file" accept=".mp4,.webm,.ogv,.ogg,video/mp4,video/webm,video/ogg">
+              <span class="upload-note">Maksimal 500 MB per video. MP4 disarankan agar lebih kompatibel.</span>
+            </div>
+            <div class="upload-row">
+              <button class="primary" type="button" id="uploadSiteGalleryVideo">Unggah / Ganti Video</button>
+            </div>
+            <div class="video-upload-progress" id="videoUploadProgress" role="status" aria-live="polite"></div>
+            <p class="notice">Setelah unggah berhasil, video masih berupa draf. Tekan Simpan Perubahan untuk menerbitkannya. Video sebelumnya tetap tersimpan sebagai versi sebelumnya, bukan dihapus permanen.</p>
+          </div>
+          <p class="notice">Penghapusan foto atau video baru diterapkan saat tombol Simpan Perubahan ditekan. File video lama tidak dihapus dari penyimpanan.</p>
         </section>
         <section class="section-card"><div class="section-heading"><div><div class="section-label">Promosi</div><h2>Banner teks promo</h2><p class="muted">Tambah atau hapus promo bergilir. Minimal satu promo harus ada.</p></div><button class="primary" type="button" data-action="add-promo">+ Tambah Promo</button></div><div class="form-grid">${promos}</div></section>
         <section class="section-card"><div class="section-heading"><div><div class="section-label">Produk</div><h2>Harga, nama, dan foto produk</h2><p class="muted">Tambah/hapus produk. Card baru mengikuti desain card produk website. Setelah produk disimpan, unggah fotonya.</p></div><button class="primary" type="button" data-action="add-product">+ Tambah Produk</button></div><div class="product-grid">${products}</div></section>
@@ -306,6 +341,7 @@
         <p class="notice">Foto yang diunggah disimpan ke folder assets di GitHub. Setiap penyimpanan membuat commit baru. Jangan tutup halaman sampai popup hasil muncul.</p>`;
       $('#uploadHero').addEventListener('click', () => handleHeroUpload());
       $('#uploadSiteGallery').addEventListener('click', () => handleSiteGalleryUpload());
+      $('#uploadSiteGalleryVideo').addEventListener('click', () => handleSiteGalleryVideoUpload());
     }
     function readForm() {
       const value = id => { const element = $(id); return element ? element.value.trim() : ''; };
@@ -337,6 +373,7 @@
       };
     }
     async function loadEditor() {
+      pendingGalleryVideoUrl = '';
       clearStatus($('#mainStatus'));
       $('#editor').innerHTML = '<div class="section-card">Memuat data website dari GitHub…</div>';
       const result = await api('/api/admin/content');
@@ -428,6 +465,108 @@
         showPopup('Gagal menambah foto galeri', error.message, true);
       } finally { busy = false; setButtons(false); }
     }
+    function getVideoExtension(fileName) {
+      const match = String(fileName || '').match(/\.(mp4|webm|ogv|ogg)$/i);
+      return match ? match[1].toLowerCase() : '';
+    }
+    function getVideoMime(file) {
+      const ext = getVideoExtension(file.name);
+      const typeByExtension = { mp4: 'video/mp4', webm: 'video/webm', ogv: 'video/ogg', ogg: 'video/ogg' };
+      if (!ext) throw new Error('Gunakan video MP4, WebM, atau OGG.');
+      const type = typeByExtension[ext];
+      if (file.type && !['video/mp4', 'video/webm', 'video/ogg', 'application/ogg'].includes(file.type.toLowerCase())) {
+        throw new Error(`Format video “${file.name}” tidak didukung. Gunakan MP4, WebM, atau OGG.`);
+      }
+      return type;
+    }
+    function safeVideoFileName(fileName) {
+      const ext = getVideoExtension(fileName);
+      const base = String(fileName || '').replace(/\.[^.]+$/, '').normalize('NFKD')
+        .replace(/[^A-Za-z0-9._-]+/g, '-').replace(/-+/g, '-').replace(/^[.-]+|[.-]+$/g, '').slice(0, 90);
+      return `${base || 'egya-video'}.${ext}`;
+    }
+    async function getBlobClientUpload() {
+      if (!blobClientUploadPromise) {
+        blobClientUploadPromise = import('https://esm.sh/@vercel/blob@2.8.1/client?bundle')
+          .then(module => {
+            if (typeof module.upload !== 'function') throw new Error('Modul unggah video tidak tersedia.');
+            return module.upload;
+          })
+          .catch(error => {
+            blobClientUploadPromise = null;
+            throw new Error(`Modul unggah video tidak dapat dimuat dari CDN. Periksa koneksi internet, lalu coba lagi. ${error.message || ''}`.trim());
+          });
+      }
+      return blobClientUploadPromise;
+    }
+    async function handleSiteGalleryVideoUpload() {
+      if (busy) return;
+      const input = $('#siteGalleryVideoFile');
+      const file = input && input.files ? input.files[0] : null;
+      if (!file) return showPopup('Pilih video', 'Pilih video MP4, WebM, atau OGG terlebih dahulu.', true);
+      let contentType;
+      try { contentType = getVideoMime(file); }
+      catch (error) { return showPopup('Format video tidak valid', error.message, true); }
+      if (file.size <= 0) return showPopup('Video kosong', 'File video kosong atau tidak dapat dibaca.', true);
+      if (file.size > MAX_VIDEO_BYTES) return showPopup('Video terlalu besar', 'Ukuran video maksimal 500 MB per file.', true);
+      const draftBeforeUpload = mergeDraftIntoServer(latestData, readForm());
+      const operationLabel = draftBeforeUpload.galleryVideo ? 'mengganti video aktif' : 'mengunggah video baru';
+      if (!confirm(`Lanjutkan ${operationLabel}?
+
+Video akan diunggah ke penyimpanan publik Vercel Blob. Video baru belum tampil di website sampai bosku menekan Simpan Perubahan.`)) return;
+
+      busy = true;
+      setButtons(true);
+      const progress = $('#videoUploadProgress');
+      try {
+        if (progress) {
+          progress.textContent = 'Menyiapkan unggahan video…';
+          progress.className = 'video-upload-progress show';
+        }
+        showStatus($('#mainStatus'), 'Menyiapkan unggahan video ke penyimpanan…');
+        const upload = await getBlobClientUpload();
+        const pathname = `egyadurian-gallery-videos/${Date.now()}-${safeVideoFileName(file.name)}`;
+        const blob = await upload(pathname, file, {
+          access: 'public',
+          contentType,
+          handleUploadUrl: '/api/admin/video-upload',
+          multipart: true,
+          onUploadProgress: event => {
+            const percentage = Math.max(0, Math.min(100, Math.round(Number(event.percentage) || 0)));
+            const loadedMB = (Number(event.loaded) || 0) / (1024 * 1024);
+            const totalMB = (Number(event.total) || file.size) / (1024 * 1024);
+            const text = `Mengunggah video… ${percentage}% (${loadedMB.toFixed(1)} / ${totalMB.toFixed(1)} MB)`;
+            if (progress) { progress.textContent = text; progress.className = 'video-upload-progress show'; }
+            showStatus($('#mainStatus'), text);
+          },
+        });
+        if (!blob || typeof blob.url !== 'string' || !blob.url.startsWith('https://')) throw new Error('Upload selesai tetapi URL video tidak diterima dari penyimpanan.');
+        const draft = mergeDraftIntoServer(latestData, readForm());
+        const previousActive = draft.galleryVideo || '';
+        const previousArchive = draft.galleryVideoArchive || '';
+        draft.galleryVideo = blob.url;
+        draft.galleryVideoArchive = previousActive && previousActive !== blob.url ? previousActive : previousArchive;
+        pendingGalleryVideoUrl = blob.url;
+        renderEditor(draft);
+        const successMessage = 'Video berhasil diunggah ke Vercel Blob sebagai draf. Tekan Simpan Perubahan untuk mengaktifkan video baru di website. Video sebelumnya tetap tersimpan sebagai video arsip.';
+        showStatus($('#mainStatus'), successMessage);
+        showPopup('Video berhasil diunggah', successMessage, false);
+      } catch (error) {
+        const detail = error && error.message ? error.message : 'Unggah video gagal. Coba lagi.';
+        if (progress) { progress.textContent = detail; progress.className = 'video-upload-progress show'; }
+        showStatus($('#mainStatus'), detail, true);
+        const needsBlobSetupHelp = /BLOB_READ_WRITE_TOKEN|blob store|client token|access denied|vercel blob/i.test(detail);
+        showPopup('Gagal mengunggah video', needsBlobSetupHelp
+          ? `${detail}
+
+Pastikan Vercel Blob Store sudah dibuat sebagai Public dan terhubung ke project EGYA DURIAN, BLOB_READ_WRITE_TOKEN tersedia di Environment Variables, lalu deployment terbaru sudah Ready.`
+          : detail, true);
+      } finally {
+        busy = false;
+        setButtons(false);
+      }
+    }
+
     async function handleProductPhotoAction(button) {
       if (busy) return;
       const productId = button.dataset.id;
@@ -547,19 +686,22 @@
         showStatus($('#mainStatus'), 'Foto ditandai untuk dihapus dari galeri website. Tekan Simpan Perubahan untuk menerapkannya.');
       } else if (action === 'remove-gallery-video') {
         if (!data.galleryVideo) return showPopup('Video tidak ditemukan', 'Muat ulang data galeri lalu coba lagi.', true);
-        if (!confirm(`Hapus video dari Galeri EGYA DURIAN?\n\n${data.galleryVideo}\n\nFile aslinya tetap tersimpan di assets. Perubahan baru diterapkan setelah Simpan Perubahan.`)) return;
+        if (!confirm(`Sembunyikan video aktif dari Galeri EGYA DURIAN?\n\n${data.galleryVideo}\n\nFile aslinya tidak dihapus. Perubahan baru diterapkan setelah Simpan Perubahan.`)) return;
         data.galleryVideoArchive = data.galleryVideo || data.galleryVideoArchive || persistedGalleryVideoPath || persistedGalleryVideoArchivePath;
         data.galleryVideo = '';
+        pendingGalleryVideoUrl = '';
         if (!data.galleryVideoArchive) return showPopup('File video tidak ditemukan', 'Path video tidak tersedia untuk disimpan sebagai video arsip.', true);
         renderEditor(data);
-        showStatus($('#mainStatus'), 'Video ditandai untuk disembunyikan dari galeri website. Tekan Simpan Perubahan untuk menerapkannya. File video tetap disimpan di assets.');
+        showStatus($('#mainStatus'), 'Video ditandai untuk disembunyikan dari galeri website. Tekan Simpan Perubahan untuk menerapkannya. File video tetap tersimpan.');
       } else if (action === 'restore-gallery-video') {
         const path = data.galleryVideoArchive || persistedGalleryVideoArchivePath || persistedGalleryVideoPath;
         if (!path) return showPopup('Video tidak dapat dipulihkan', 'Path file video tidak tersedia. Muat ulang data galeri lalu coba lagi.', true);
+        const previousActive = data.galleryVideo || '';
         data.galleryVideo = path;
-        data.galleryVideoArchive = '';
+        data.galleryVideoArchive = previousActive && previousActive !== path ? previousActive : '';
+        pendingGalleryVideoUrl = '';
         renderEditor(data);
-        showStatus($('#mainStatus'), 'Video ditandai untuk ditampilkan kembali. Tekan Simpan Perubahan untuk menerapkannya.');
+        showStatus($('#mainStatus'), 'Video pilihan ditandai sebagai video aktif. Video sebelumnya tetap tersedia sebagai arsip. Tekan Simpan Perubahan untuk menerapkannya.');
       } else if (action === 'add-product') {
         if (data.products.length >= 50) return showPopup('Batas produk tercapai', 'Maksimal 50 produk dapat dikelola.', true);
         const product = { id: productIdNew(), name: 'Produk baru', badge: '✨ Baru', badgeClass: 'new', category: 'lainnya', oldPrice: 0, price: 0 };
@@ -632,6 +774,7 @@
           }
           pendingProductFiles.delete(productId);
         }
+        pendingGalleryVideoUrl = '';
         await loadEditor();
         const message = (result.message || (result.unchanged ? 'Tidak ada perubahan pada teks produk.' : 'Perubahan berhasil disimpan.')) + (uploadedPhotos ? ` ${uploadedPhotos} foto produk juga berhasil diunggah.` : '');
         showStatus($('#mainStatus'), message);
