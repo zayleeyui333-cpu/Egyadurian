@@ -3,14 +3,26 @@
 const { sendJson, requireAdmin, isSameOrigin } = require('../../lib/admin-auth');
 const { getFile, putFile } = require('../../lib/github-repo');
 
-const PRODUCTS = [
-  { id: 'musang', marker: 'MUSANG KING', next: 'BLACK THORN' },
-  { id: 'blackthorn', marker: 'BLACK THORN', next: 'MONTHONG' },
-  { id: 'monthong', marker: 'MONTHONG', next: 'DURIAN KUPAS' },
-  { id: 'kupas', marker: 'DURIAN KUPAS', next: 'PANCAKE DURIAN' },
-  { id: 'pancake', marker: 'PANCAKE DURIAN', next: 'PANCAKE ROLL' },
-  { id: 'pancakeroll', marker: 'PANCAKE ROLL', next: null },
-];
+const STATIC_PRODUCTS = {
+  'MUSANG KING': 'musang',
+  'BLACK THORN': 'blackthorn',
+  'MONTHONG': 'monthong',
+  'DURIAN KUPAS': 'kupas',
+  'PANCAKE DURIAN': 'pancake',
+  'PANCAKE ROLL': 'pancakeroll',
+};
+const STATIC_MARKERS = Object.fromEntries(Object.entries(STATIC_PRODUCTS).map(([marker, id]) => [id, marker]));
+const PRODUCT_MARKER_RE = /<!--\s*(?:(MUSANG KING|BLACK THORN|MONTHONG|DURIAN KUPAS|PANCAKE DURIAN|PANCAKE ROLL)|ADMIN PRODUCT\s+id=["']([a-z0-9_-]{1,64})["'])\s*-->/gi;
+const CATEGORIES = {
+  musang: 'Musang King',
+  blackthorn: 'Black Thorn',
+  monthong: 'Monthong',
+  kupas: 'Durian Kupas',
+  pancake: 'Pancake Durian',
+  pancakeroll: 'Pancake Rolls',
+  lainnya: 'Lainnya',
+};
+const BADGE_CLASSES = new Set(['premium', 'flash', 'best', 'new']);
 
 function decodeHtml(value) {
   return String(value || '')
@@ -36,6 +48,18 @@ function classTokens(tagBlock) {
   const classMatch = openTag.match(/\bclass\s*=\s*["']([^"']*)["']/i);
   return classMatch ? classMatch[1].split(/\s+/).filter(Boolean) : [];
 }
+function getAttribute(openTag, name) {
+  const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = openTag.match(new RegExp(`\\b${escapedName}\\s*=\\s*(["'])([\\s\\S]*?)\\1`, 'i'));
+  return match ? decodeHtml(match[2]) : '';
+}
+function setAttribute(openTag, name, value) {
+  const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const pattern = new RegExp(`\\b${escapedName}\\s*=\\s*(["'])([\\s\\S]*?)\\1`, 'i');
+  const safe = htmlEscape(value);
+  if (pattern.test(openTag)) return openTag.replace(pattern, `${name}="${safe}"`);
+  return openTag.replace(/>$/, ` ${name}="${safe}">`);
+}
 function tagValue(source, tag, className) {
   const pattern = new RegExp(`<${tag}\\b[^>]*>[\\s\\S]*?<\\/${tag}>`, 'gi');
   for (const match of source.matchAll(pattern)) {
@@ -46,19 +70,10 @@ function tagValue(source, tag, className) {
   }
   return '';
 }
-function extractProductChunk(html, definition) {
-  const startMarker = `<!-- ${definition.marker} -->`;
-  const start = html.indexOf(startMarker);
-  if (start < 0) throw new Error(`Penanda produk ${definition.marker} tidak ditemukan di index.html.`);
-  let end;
-  if (definition.next) {
-    end = html.indexOf(`<!-- ${definition.next} -->`, start + startMarker.length);
-  } else {
-    const sectionEnd = html.indexOf('</section>', start + startMarker.length);
-    end = sectionEnd < 0 ? -1 : sectionEnd;
-  }
-  if (end < 0) throw new Error(`Bagian produk ${definition.marker} tidak lengkap.`);
-  return html.slice(start, end);
+function getRegion(html, regex, label) {
+  const match = html.match(regex);
+  if (!match) throw new Error(`Bagian ${label} tidak ditemukan di index.html.`);
+  return { text: match[0], start: match.index, end: match.index + match[0].length };
 }
 function extractParagraphByEmoji(block, emoji) {
   const escaped = emoji.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -71,40 +86,127 @@ function replaceEmojiParagraph(block, emoji, content) {
   if (!pattern.test(block)) throw new Error(`Bagian kontak ${emoji} tidak ditemukan.`);
   return block.replace(pattern, `$1 ${htmlEscape(content)}$2`);
 }
-function getRegion(html, regex, label) {
-  const match = html.match(regex);
-  if (!match) throw new Error(`Bagian ${label} tidak ditemukan di index.html.`);
-  return { text: match[0], start: match.index, end: match.index + match[0].length };
+function replaceTagText(source, tag, value, className) {
+  const pattern = new RegExp(`<${tag}\\b[^>]*>[\\s\\S]*?<\\/${tag}>`, 'gi');
+  let replaced = false;
+  const result = source.replace(pattern, block => {
+    if (replaced || (className && !classTokens(block).includes(className))) return block;
+    const match = block.match(new RegExp(`^(<${tag}\\b[^>]*>)[\\s\\S]*?(<\\/${tag}>)$`, 'i'));
+    if (!match) return block;
+    replaced = true;
+    return `${match[1]}${htmlEscape(value)}${match[2]}`;
+  });
+  if (!replaced) throw new Error(`Elemen ${tag}${className ? `.${className}` : ''} tidak ditemukan.`);
+  return result;
+}
+function replaceTagByIndex(source, tag, index, value) {
+  let seen = -1;
+  const pattern = new RegExp(`<${tag}\\b[^>]*>[\\s\\S]*?<\\/${tag}>`, 'gi');
+  let replaced = false;
+  const result = source.replace(pattern, block => {
+    seen += 1;
+    if (seen !== index) return block;
+    const match = block.match(new RegExp(`^(<${tag}\\b[^>]*>)[\\s\\S]*?(<\\/${tag}>)$`, 'i'));
+    if (!match) return block;
+    replaced = true;
+    return `${match[1]}${htmlEscape(value)}${match[2]}`;
+  });
+  if (!replaced) throw new Error(`Elemen ${tag} nomor ${index + 1} tidak ditemukan.`);
+  return result;
+}
+function findElementByClass(source, tagName, className, fromIndex = 0) {
+  const openingPattern = new RegExp(`<${tagName}\\b[^>]*>`, 'gi');
+  openingPattern.lastIndex = fromIndex;
+  let opening;
+  while ((opening = openingPattern.exec(source))) {
+    if (!classTokens(opening[0]).includes(className)) continue;
+    const tagPattern = new RegExp(`<\\/?${tagName}\\b[^>]*>`, 'gi');
+    tagPattern.lastIndex = opening.index;
+    let depth = 0;
+    let tag;
+    while ((tag = tagPattern.exec(source))) {
+      if (/^<\//.test(tag[0])) depth -= 1;
+      else if (!/\/>$/.test(tag[0])) depth += 1;
+      if (depth === 0) {
+        const end = tagPattern.lastIndex;
+        return {
+          start: opening.index,
+          end,
+          openTag: opening[0],
+          closeTag: tag[0],
+          text: source.slice(opening.index, end),
+          inner: source.slice(openingPattern.lastIndex, tag.index),
+        };
+      }
+    }
+    throw new Error(`Tag penutup ${tagName}.${className} tidak lengkap.`);
+  }
+  return null;
+}
+function getProductBlocks(productsSection) {
+  const sectionClose = productsSection.toLowerCase().lastIndexOf('</section>');
+  const searchEnd = sectionClose >= 0 ? sectionClose : productsSection.length;
+  const searchable = productsSection.slice(0, searchEnd);
+  const markers = [...searchable.matchAll(PRODUCT_MARKER_RE)];
+  return markers.map((match, index) => {
+    const end = index + 1 < markers.length ? markers[index + 1].index : searchEnd;
+    const legacyMarker = match[1] ? match[1].toUpperCase() : '';
+    const id = legacyMarker ? STATIC_PRODUCTS[legacyMarker] : match[2].toLowerCase();
+    return {
+      id,
+      marker: match[0],
+      start: match.index,
+      end,
+      block: productsSection.slice(match.index, end).trim(),
+    };
+  });
+}
+function productDataFromBlock(block, id) {
+  const card = findElementByClass(block, 'div', 'product-card');
+  if (!card) throw new Error(`Card produk ${id} tidak ditemukan.`);
+  const badgeOpen = (block.match(/<span\b[^>]*class=["'][^"']*\bproduct-badge\b[^"']*["'][^>]*>/i) || [''])[0];
+  const badgeTokens = classTokens(badgeOpen).filter(token => token !== 'product-badge');
+  const imageOpen = (block.match(/<img\b[^>]*class=["'][^"']*\bproduct-image\b[^"']*["'][^>]*>/i) || [''])[0];
+  return {
+    id,
+    name: plainText(tagValue(block, 'h3')),
+    badge: plainText(tagValue(block, 'span', 'product-badge')),
+    badgeClass: BADGE_CLASSES.has(badgeTokens[0]) ? badgeTokens[0] : 'premium',
+    category: CATEGORIES[getAttribute(card.openTag, 'data-category')] ? getAttribute(card.openTag, 'data-category') : 'lainnya',
+    oldPrice: amountFromText(tagValue(block, 'p', 'old-price')),
+    price: amountFromText(tagValue(block, 'p', 'price')),
+    image: getAttribute(imageOpen, 'src'),
+  };
+}
+function extractAllDivsByClass(source, className) {
+  const results = [];
+  let cursor = 0;
+  while (cursor < source.length) {
+    const found = findElementByClass(source, 'div', className, cursor);
+    if (!found) break;
+    results.push(found);
+    cursor = found.end;
+  }
+  return results;
 }
 function getAdminData(html) {
-  const contact = getRegion(html, /<section\b(?=[^>]*\bid="contact")[\s\S]*?<\/section>/i, 'contact').text;
+  const contact = getRegion(html, /<section\b(?=[^>]*\bid=["']contact["'])[\s\S]*?<\/section>/i, 'contact').text;
   const hero = getRegion(html, /<div\s+class="hero-content">[\s\S]*?<div\s+class="hero-rating">[\s\S]*?<\/div>/i, 'hero').text;
-  const about = getRegion(html, /<section\b(?=[^>]*\bid="about")[\s\S]*?<\/section>/i, 'about').text;
+  const about = getRegion(html, /<section\b(?=[^>]*\bid=["']about["'])[\s\S]*?<\/section>/i, 'about').text;
   const promo = getRegion(html, /<section\s+class="promo-slider">[\s\S]*?<\/section>/i, 'promo slider').text;
-  const testimonial = getRegion(html, /<section\b(?=[^>]*\bid="testimonials")[\s\S]*?<\/section>/i, 'testimonials').text;
+  const testimonial = getRegion(html, /<section\b(?=[^>]*\bid=["']testimonials["'])[\s\S]*?<\/section>/i, 'testimonials').text;
+  const productsSection = getRegion(html, /<section\b(?=[^>]*\bid=["']products["'])[\s\S]*?<\/section>/i, 'products').text;
 
   const phoneParagraph = (contact.match(/<p\b[^>]*>\s*📞[\s\S]*?<\/p>/i) || [''])[0];
   const phones = (plainText(phoneParagraph).match(/\+?\d[\d ()-]{6,}\d/g) || []).map(value => value.trim());
   const heroP = Array.from(hero.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)).map(match => plainText(match[1]));
   const promos = Array.from(promo.matchAll(/<div\s+class="slide(?:\s+active)?"[^>]*>([\s\S]*?)<\/div>/gi)).map(match => plainText(match[1]));
-  const testimonialCards = Array.from(testimonial.matchAll(/<div\s+class="testimonial-card"[^>]*>[\s\S]*?<\/div>/gi)).map(match => match[0]);
-  const testimonials = testimonialCards.slice(0, 3).map(card => ({
-    text: plainText(tagValue(card, 'p')),
-    name: plainText(tagValue(card, 'strong')).replace(/^[-–]\s*/, ''),
+  const testimonialCards = extractAllDivsByClass(testimonial, 'testimonial-card');
+  const testimonials = testimonialCards.map(card => ({
+    text: plainText(tagValue(card.text, 'p')),
+    name: plainText(tagValue(card.text, 'strong')).replace(/^[-–]\s*/, ''),
   }));
-  const products = PRODUCTS.map(definition => {
-    const chunk = extractProductChunk(html, definition);
-    const priceText = tagValue(chunk, 'p', 'price');
-    const oldPriceText = tagValue(chunk, 'p', 'old-price');
-    const badgeMatch = chunk.match(/<span\s+class="product-badge[^\"]*"[^>]*>([\s\S]*?)<\/span>/i);
-    return {
-      id: definition.id,
-      name: plainText(tagValue(chunk, 'h3')),
-      badge: plainText(badgeMatch ? badgeMatch[1] : ''),
-      oldPrice: amountFromText(oldPriceText),
-      price: amountFromText(priceText),
-    };
-  });
+  const products = getProductBlocks(productsSection).map(block => productDataFromBlock(block.block, block.id));
 
   const titleMatch = hero.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i);
   const headingMatch = hero.match(/<h2\b[^>]*>([\s\S]*?)<\/h2>/i);
@@ -130,141 +232,170 @@ function getAdminData(html) {
       paragraph1: aboutParagraphs[0] || '',
       paragraph2: aboutParagraphs[1] || '',
     },
-    promos: Array.from({ length: 4 }, (_, index) => promos[index] || ''),
+    promos,
     products,
-    testimonials: Array.from({ length: 3 }, (_, index) => testimonials[index] || { text: '', name: '' }),
+    testimonials,
   };
 }
-function replaceTagText(source, tag, value, className) {
-  if (className) {
-    const pattern = new RegExp(`<${tag}\\b[^>]*>[\\s\\S]*?<\\/${tag}>`, 'gi');
-    let replaced = false;
-    const result = source.replace(pattern, block => {
-      if (replaced || !classTokens(block).includes(className)) return block;
-      const match = block.match(new RegExp(`^(<${tag}\\b[^>]*>)[\\s\\S]*?(<\\/${tag}>)$`, 'i'));
-      if (!match) return block;
-      replaced = true;
-      return `${match[1]}${htmlEscape(value)}${match[2]}`;
-    });
-    if (!replaced) throw new Error(`Elemen ${tag}.${className} tidak ditemukan.`);
-    return result;
-  }
-  const pattern = new RegExp(`(<${tag}\\b[^>]*>)[\\s\\S]*?(<\\/${tag}>)`, 'i');
-  if (!pattern.test(source)) throw new Error(`Elemen ${tag} tidak ditemukan.`);
-  return source.replace(pattern, (_, open, close) => `${open}${htmlEscape(value)}${close}`);
+function setProductCardAttributes(block, product, extraAttributes = {}) {
+  const match = block.match(/<div\b(?=[^>]*\bclass=["'][^"']*\bproduct-card\b[^"']*["'])[^>]*>/i);
+  if (!match) throw new Error(`Tag pembuka produk ${product.id} tidak ditemukan.`);
+  let opening = match[0];
+  opening = setAttribute(opening, 'data-category', product.category);
+  opening = setAttribute(opening, 'data-price', String(Number(product.price) || 0));
+  opening = setAttribute(opening, 'data-admin-product-id', product.id);
+  for (const [name, value] of Object.entries(extraAttributes)) opening = setAttribute(opening, name, value);
+  return block.replace(match[0], opening);
 }
-function replaceTagByIndex(source, tag, index, value) {
-  let seen = -1;
-  const pattern = new RegExp(`<${tag}\\b[^>]*>[\\s\\S]*?<\\/${tag}>`, 'gi');
-  return source.replace(pattern, block => {
-    seen += 1;
-    if (seen !== index) return block;
-    const match = block.match(new RegExp(`^(<${tag}\\b[^>]*>)[\\s\\S]*?(<\\/${tag}>)$`, 'i'));
-    if (!match) return block;
-    return `${match[1]}${htmlEscape(value)}${match[2]}`;
+function replaceProductBadge(block, product) {
+  const pattern = /<span\b(?=[^>]*\bclass=["'][^"']*\bproduct-badge\b[^"']*["'])[^>]*>[\s\S]*?<\/span>/i;
+  if (!pattern.test(block)) throw new Error(`Badge produk ${product.id} tidak ditemukan.`);
+  return block.replace(pattern, whole => {
+    const opening = whole.match(/^<span\b[^>]*>/i)[0];
+    const newOpening = setAttribute(opening, 'class', `product-badge ${product.badgeClass}`);
+    return `${newOpening}${htmlEscape(product.badge)}</span>`;
   });
 }
-function extractDataPrice(chunk) {
-  const match = chunk.match(/data-price="(\d+)"/i);
-  return match ? Number(match[1]) : null;
+function productFieldsEqual(a, b) {
+  return a.id === b.id && a.name === b.name && a.badge === b.badge && a.badgeClass === b.badgeClass && a.category === b.category && Number(a.oldPrice) === Number(b.oldPrice) && Number(a.price) === Number(b.price);
 }
-function updateProduct(html, definition, updatedProduct, previousProduct) {
-  if (updatedProduct.name === previousProduct.name &&
-      updatedProduct.badge === previousProduct.badge &&
-      Number(updatedProduct.oldPrice) === Number(previousProduct.oldPrice) &&
-      Number(updatedProduct.price) === Number(previousProduct.price)) return html;
-  const chunk = extractProductChunk(html, definition);
-  let changed = chunk;
-  if (updatedProduct.name !== previousProduct.name) changed = replaceTagText(changed, 'h3', updatedProduct.name);
-  if (Number(updatedProduct.oldPrice) !== Number(previousProduct.oldPrice)) changed = replaceTagText(changed, 'p', rupiah(updatedProduct.oldPrice), 'old-price');
-  if (Number(updatedProduct.price) !== Number(previousProduct.price)) {
-    changed = replaceTagText(changed, 'p', rupiah(updatedProduct.price), 'price');
-    changed = changed.replace(/data-price="\d+"/i, `data-price="${Number(updatedProduct.price)}"`);
-  }
-  if (updatedProduct.badge !== previousProduct.badge) changed = replaceTagText(changed, 'span', updatedProduct.badge, 'product-badge');
-  const start = html.indexOf(chunk);
-  return html.slice(0, start) + changed + html.slice(start + chunk.length);
+function productsEqual(a, b) {
+  return a.length === b.length && a.every((product, index) => productFieldsEqual(product, b[index]));
 }
-
+function markerForProduct(id) {
+  return STATIC_MARKERS[id] ? `<!-- ${STATIC_MARKERS[id]} -->` : `<!-- ADMIN PRODUCT id="${id}" -->`;
+}
+function stripLeadingProductMarker(block) {
+  return block.replace(/^\s*<!--\s*(?:(?:MUSANG KING|BLACK THORN|MONTHONG|DURIAN KUPAS|PANCAKE DURIAN|PANCAKE ROLL)|ADMIN PRODUCT\s+id=["'][a-z0-9_-]{1,64}["'])\s*-->\s*/i, '').trim();
+}
+function updateExistingProductBlock(block, product) {
+  let updated = stripLeadingProductMarker(block);
+  const oldName = plainText(tagValue(updated, 'h3'));
+  const oldOldPrice = amountFromText(tagValue(updated, 'p', 'old-price'));
+  const oldPrice = amountFromText(tagValue(updated, 'p', 'price'));
+  const oldBadge = plainText(tagValue(updated, 'span', 'product-badge'));
+  const oldBadgeClass = (() => {
+    const open = (updated.match(/<span\b[^>]*class=["'][^"']*\bproduct-badge\b[^"']*["'][^>]*>/i) || [''])[0];
+    return classTokens(open).filter(token => token !== 'product-badge')[0] || 'premium';
+  })();
+  if (product.name !== oldName) updated = replaceTagText(updated, 'h3', product.name);
+  if (Number(product.oldPrice) !== oldOldPrice) updated = replaceTagText(updated, 'p', rupiah(product.oldPrice), 'old-price');
+  if (Number(product.price) !== oldPrice) updated = replaceTagText(updated, 'p', rupiah(product.price), 'price');
+  if (product.badge !== oldBadge || product.badgeClass !== oldBadgeClass) updated = replaceProductBadge(updated, product);
+  updated = setProductCardAttributes(updated, product);
+  return `${markerForProduct(product.id)}\n\n${updated.trim()}`;
+}
+function createProductBlock(templateBlock, product) {
+  let created = stripLeadingProductMarker(templateBlock);
+  const imageOpen = (created.match(/<img\b[^>]*class=["'][^"']*\bproduct-image\b[^"']*["'][^>]*>/i) || [''])[0];
+  const imagePath = getAttribute(imageOpen, 'src') || 'assets/musangking.png';
+  created = replaceTagText(created, 'h3', product.name);
+  created = replaceTagText(created, 'p', rupiah(product.oldPrice), 'old-price');
+  created = replaceTagText(created, 'p', rupiah(product.price), 'price');
+  created = replaceProductBadge(created, product);
+  created = setProductCardAttributes(created, product, { 'data-images': JSON.stringify([imagePath]) });
+  return `${markerForProduct(product.id)}\n\n${created.trim()}`;
+}
+function updateProductsSection(section, submittedProducts, currentProducts) {
+  const blocks = getProductBlocks(section);
+  if (!blocks.length) throw new Error('Card produk tidak ditemukan di index.html.');
+  const byId = new Map(blocks.map(block => [block.id, block]));
+  const currentById = new Map(currentProducts.map(product => [product.id, product]));
+  const templateBlock = blocks[0].block;
+  const rendered = submittedProducts.map(product => {
+    if (byId.has(product.id) && currentById.has(product.id)) {
+      return updateExistingProductBlock(byId.get(product.id).block, product);
+    }
+    return createProductBlock(templateBlock, product);
+  });
+  const first = blocks[0].start;
+  const close = section.toLowerCase().lastIndexOf('</section>');
+  if (close < 0) throw new Error('Penutup bagian produk tidak ditemukan.');
+  const prefix = section.slice(0, first);
+  const suffix = section.slice(close);
+  return `${prefix}${rendered.join('\n\n')}\n\n${suffix}`;
+}
+function ensureCategoryFilters(html, products) {
+  const region = getRegion(html, /<section\b(?=[^>]*\bclass=["'][^"']*\bfilter-wrapper\b[^"']*["'])[^>]*>[\s\S]*?<\/section>/i, 'filter produk');
+  let wrapper = region.text;
+  const existing = new Set([...wrapper.matchAll(/<button\b[^>]*\bdata-category=["']([^"']+)["'][^>]*>/gi)].map(match => match[1]));
+  const needed = [...new Set(products.map(product => product.category))].filter(category => CATEGORIES[category] && !existing.has(category));
+  if (!needed.length) return html;
+  const additions = needed.map(category => `<button class="filter-btn" data-category="${category}">\n\n${htmlEscape(CATEGORIES[category])}\n\n</button>`).join('\n\n');
+  wrapper = wrapper.replace(/<\/section>\s*$/i, `${additions}\n\n</section>`);
+  return html.slice(0, region.start) + wrapper + html.slice(region.end);
+}
+function updatePromoSection(section, promos) {
+  const opening = (section.match(/^\s*(<section\b[^>]*>)/i) || [null, '<section class="promo-slider">'])[1];
+  const slides = promos.map((promo, index) => `<div class="slide${index === 0 ? ' active' : ''}">\n\n${htmlEscape(promo)}\n\n</div>`).join('\n\n');
+  return `${opening}\n\n${slides}\n\n</section>`;
+}
+function updateTestimonialsSection(section, testimonials) {
+  const grid = findElementByClass(section, 'div', 'testimonial-grid');
+  if (!grid) throw new Error('Daftar testimoni tidak ditemukan di index.html.');
+  const cards = testimonials.map(item => `<div class="testimonial-card">\n\n⭐️⭐️⭐️⭐️⭐️\n\n<p>\n\n${htmlEscape(item.text)}\n\n</p>\n\n<strong>\n\n- ${htmlEscape(item.name)}\n\n</strong>\n\n</div>`).join('\n\n');
+  const newGrid = `${grid.openTag}\n\n${cards}\n\n${grid.closeTag}`;
+  return section.slice(0, grid.start) + newGrid + section.slice(grid.end);
+}
 function updateContent(html, submitted) {
   const current = getAdminData(html);
   const input = validatePayload(submitted);
   let updated = html;
 
-  if (input.contact.location !== current.contact.location ||
-      input.contact.phonePrimary !== current.contact.phonePrimary ||
-      input.contact.phoneWhatsapp !== current.contact.phoneWhatsapp ||
-      input.contact.email !== current.contact.email ||
-      input.contact.hours !== current.contact.hours) {
-    const contactRegion = getRegion(updated, /<section\b(?=[^>]*\bid="contact")[\s\S]*?<\/section>/i, 'contact');
-    let contact = contactRegion.text;
-    if (input.contact.location !== current.contact.location) contact = replaceEmojiParagraph(contact, '📍', input.contact.location);
+  if (input.contact.location !== current.contact.location || input.contact.phonePrimary !== current.contact.phonePrimary || input.contact.phoneWhatsapp !== current.contact.phoneWhatsapp || input.contact.email !== current.contact.email || input.contact.hours !== current.contact.hours) {
+    const region = getRegion(updated, /<section\b(?=[^>]*\bid=["']contact["'])[\s\S]*?<\/section>/i, 'contact');
+    let block = region.text;
+    if (input.contact.location !== current.contact.location) block = replaceEmojiParagraph(block, '📍', input.contact.location);
     if (input.contact.phonePrimary !== current.contact.phonePrimary || input.contact.phoneWhatsapp !== current.contact.phoneWhatsapp) {
       const phonePattern = /(<p\b[^>]*>\s*📞)[\s\S]*?(<\/p>)/i;
-      if (!phonePattern.test(contact)) throw new Error('Nomor telepon tidak ditemukan.');
-      contact = contact.replace(phonePattern, `$1 ${htmlEscape(input.contact.phonePrimary)} / <i class="fa-brands fa-whatsapp" style="color: #25D366;"></i> ${htmlEscape(input.contact.phoneWhatsapp)}$2`);
+      if (!phonePattern.test(block)) throw new Error('Nomor telepon tidak ditemukan.');
+      block = block.replace(phonePattern, `$1 ${htmlEscape(input.contact.phonePrimary)} / <i class="fa-brands fa-whatsapp" style="color: #25D366;"></i> ${htmlEscape(input.contact.phoneWhatsapp)}$2`);
     }
-    if (input.contact.email !== current.contact.email) contact = replaceEmojiParagraph(contact, '✉️', input.contact.email);
-    if (input.contact.hours !== current.contact.hours) contact = replaceEmojiParagraph(contact, '🕒', input.contact.hours);
-    updated = updated.slice(0, contactRegion.start) + contact + updated.slice(contactRegion.end);
+    if (input.contact.email !== current.contact.email) block = replaceEmojiParagraph(block, '✉️', input.contact.email);
+    if (input.contact.hours !== current.contact.hours) block = replaceEmojiParagraph(block, '🕒', input.contact.hours);
+    updated = updated.slice(0, region.start) + block + updated.slice(region.end);
   }
 
   if (Object.keys(input.hero).some(key => input.hero[key] !== current.hero[key])) {
-    const heroRegion = getRegion(updated, /<div\s+class="hero-content">[\s\S]*?<div\s+class="hero-rating">[\s\S]*?<\/div>/i, 'hero');
-    let hero = heroRegion.text;
-    if (input.hero.title !== current.hero.title) hero = replaceTagText(hero, 'h1', input.hero.title);
-    if (input.hero.subtitle !== current.hero.subtitle) hero = replaceTagText(hero, 'h2', input.hero.subtitle);
-    if (input.hero.story !== current.hero.story) hero = replaceTagByIndex(hero, 'p', 0, input.hero.story);
-    if (input.hero.tagline !== current.hero.tagline) hero = replaceTagByIndex(hero, 'p', 1, input.hero.tagline);
-    updated = updated.slice(0, heroRegion.start) + hero + updated.slice(heroRegion.end);
+    const region = getRegion(updated, /<div\s+class="hero-content">[\s\S]*?<div\s+class="hero-rating">[\s\S]*?<\/div>/i, 'hero');
+    let block = region.text;
+    if (input.hero.title !== current.hero.title) block = replaceTagText(block, 'h1', input.hero.title);
+    if (input.hero.subtitle !== current.hero.subtitle) block = replaceTagText(block, 'h2', input.hero.subtitle);
+    if (input.hero.story !== current.hero.story) block = replaceTagByIndex(block, 'p', 0, input.hero.story);
+    if (input.hero.tagline !== current.hero.tagline) block = replaceTagByIndex(block, 'p', 1, input.hero.tagline);
+    updated = updated.slice(0, region.start) + block + updated.slice(region.end);
   }
 
   if (Object.keys(input.about).some(key => input.about[key] !== current.about[key])) {
-    const aboutRegion = getRegion(updated, /<section\b(?=[^>]*\bid="about")[\s\S]*?<\/section>/i, 'about');
-    let about = aboutRegion.text;
-    if (input.about.title !== current.about.title) about = replaceTagText(about, 'h2', input.about.title);
-    if (input.about.paragraph1 !== current.about.paragraph1) about = replaceTagByIndex(about, 'p', 0, input.about.paragraph1);
-    if (input.about.paragraph2 !== current.about.paragraph2) about = replaceTagByIndex(about, 'p', 1, input.about.paragraph2);
-    updated = updated.slice(0, aboutRegion.start) + about + updated.slice(aboutRegion.end);
+    const region = getRegion(updated, /<section\b(?=[^>]*\bid=["']about["'])[\s\S]*?<\/section>/i, 'about');
+    let block = region.text;
+    if (input.about.title !== current.about.title) block = replaceTagText(block, 'h2', input.about.title);
+    if (input.about.paragraph1 !== current.about.paragraph1) block = replaceTagByIndex(block, 'p', 0, input.about.paragraph1);
+    if (input.about.paragraph2 !== current.about.paragraph2) block = replaceTagByIndex(block, 'p', 1, input.about.paragraph2);
+    updated = updated.slice(0, region.start) + block + updated.slice(region.end);
   }
 
-  if (input.promos.some((value, index) => value !== current.promos[index])) {
-    const promoRegion = getRegion(updated, /<section\s+class="promo-slider">[\s\S]*?<\/section>/i, 'promo slider');
-    let promoIndex = 0;
-    const promo = promoRegion.text.replace(/(<div\s+class="slide(?:\s+active)?"[^>]*>)[\s\S]*?(<\/div>)/gi, (all, open, close) => {
-      const index = promoIndex++;
-      return input.promos[index] !== current.promos[index] ? `${open}${htmlEscape(input.promos[index])}${close}` : all;
-    });
-    if (promoIndex !== 4) throw new Error('Jumlah banner promo tidak sesuai; tidak ada perubahan yang disimpan.');
-    updated = updated.slice(0, promoRegion.start) + promo + updated.slice(promoRegion.end);
+  if (input.promos.length !== current.promos.length || input.promos.some((value, index) => value !== current.promos[index])) {
+    const region = getRegion(updated, /<section\s+class="promo-slider">[\s\S]*?<\/section>/i, 'promo slider');
+    const block = updatePromoSection(region.text, input.promos);
+    updated = updated.slice(0, region.start) + block + updated.slice(region.end);
   }
 
-  input.products.forEach(product => {
-    const definition = PRODUCTS.find(item => item.id === product.id);
-    const previous = current.products.find(item => item.id === product.id);
-    updated = updateProduct(updated, definition, product, previous);
-  });
+  if (!productsEqual(input.products, current.products)) {
+    const region = getRegion(updated, /<section\b(?=[^>]*\bid=["']products["'])[\s\S]*?<\/section>/i, 'products');
+    const block = updateProductsSection(region.text, input.products, current.products);
+    updated = updated.slice(0, region.start) + block + updated.slice(region.end);
+    updated = ensureCategoryFilters(updated, input.products);
+  }
 
-  if (input.testimonials.some((item, index) => item.text !== current.testimonials[index].text || item.name !== current.testimonials[index].name)) {
-    const testimonialRegion = getRegion(updated, /<section\b(?=[^>]*\bid="testimonials")[\s\S]*?<\/section>/i, 'testimonials');
-    let testimonialIndex = 0;
-    const testimonial = testimonialRegion.text.replace(/<div\s+class="testimonial-card"[^>]*>[\s\S]*?<\/div>/gi, card => {
-      const index = testimonialIndex++;
-      const values = input.testimonials[index];
-      const previous = current.testimonials[index];
-      if (!values || !previous) return card;
-      let result = card;
-      if (values.text !== previous.text) result = replaceTagText(result, 'p', values.text);
-      if (values.name !== previous.name) result = replaceTagText(result, 'strong', `- ${values.name}`);
-      return result;
-    });
-    if (testimonialIndex !== 3) throw new Error('Jumlah testimoni tidak sesuai; tidak ada perubahan yang disimpan.');
-    updated = updated.slice(0, testimonialRegion.start) + testimonial + updated.slice(testimonialRegion.end);
+  if (input.testimonials.length !== current.testimonials.length || input.testimonials.some((item, index) => item.text !== current.testimonials[index]?.text || item.name !== current.testimonials[index]?.name)) {
+    const region = getRegion(updated, /<section\b(?=[^>]*\bid=["']testimonials["'])[\s\S]*?<\/section>/i, 'testimonials');
+    const block = updateTestimonialsSection(region.text, input.testimonials);
+    updated = updated.slice(0, region.start) + block + updated.slice(region.end);
   }
 
   return updated;
 }
-
 function validatePayload(value) {
   if (!value || typeof value !== 'object') throw new Error('Data formulir tidak valid.');
   const text = (input, name, max = 500) => {
@@ -274,27 +405,36 @@ function validatePayload(value) {
     return trimmed;
   };
   const phone = (input, name) => {
-    const value = text(input, name, 30);
-    if (!/^[+0-9 ()-]{7,30}$/.test(value)) throw new Error(`${name} hanya boleh berisi angka, spasi, +, tanda kurung, atau tanda hubung.`);
-    return value;
+    const result = text(input, name, 30);
+    if (!/^[+0-9 ()-]{7,30}$/.test(result)) throw new Error(`${name} hanya boleh berisi angka, spasi, +, tanda kurung, atau tanda hubung.`);
+    return result;
   };
   const price = (input, name) => {
-    const value = Number(input);
-    if (!Number.isInteger(value) || value < 0 || value > 1000000000) throw new Error(`${name} harus berupa angka Rupiah yang valid.`);
-    return value;
+    const result = Number(input);
+    if (!Number.isInteger(result) || result < 0 || result > 1000000000) throw new Error(`${name} harus berupa angka Rupiah yang valid.`);
+    return result;
   };
-  if (!Array.isArray(value.promos) || value.promos.length !== 4) throw new Error('Empat promo diperlukan.');
-  if (!Array.isArray(value.products) || value.products.length !== PRODUCTS.length) throw new Error('Enam produk diperlukan.');
-  if (!Array.isArray(value.testimonials) || value.testimonials.length !== 3) throw new Error('Tiga testimoni diperlukan.');
-  const products = value.products.map((p, index) => {
-    const expected = PRODUCTS[index];
-    if (!p || p.id !== expected.id) throw new Error('Urutan produk tidak valid. Muat ulang halaman admin.');
+  if (!Array.isArray(value.promos) || value.promos.length < 1 || value.promos.length > 20) throw new Error('Jumlah promo harus antara 1 sampai 20.');
+  if (!Array.isArray(value.products) || value.products.length < 1 || value.products.length > 50) throw new Error('Jumlah produk harus antara 1 sampai 50.');
+  if (!Array.isArray(value.testimonials) || value.testimonials.length > 30) throw new Error('Jumlah testimoni maksimal 30.');
+  const seenIds = new Set();
+  const products = value.products.map((product, index) => {
+    if (!product || typeof product.id !== 'string' || !/^[a-z0-9_-]{1,64}$/i.test(product.id)) throw new Error(`ID produk ${index + 1} tidak valid.`);
+    const id = product.id.toLowerCase();
+    if (seenIds.has(id)) throw new Error('Ada ID produk yang duplikat. Muat ulang halaman admin lalu coba lagi.');
+    seenIds.add(id);
+    const category = String(product.category || '').toLowerCase();
+    if (!CATEGORIES[category]) throw new Error(`Kategori produk ${index + 1} tidak valid.`);
+    const badgeClass = String(product.badgeClass || '').toLowerCase();
+    if (!BADGE_CLASSES.has(badgeClass)) throw new Error(`Gaya label produk ${index + 1} tidak valid.`);
     return {
-      id: expected.id,
-      name: text(p.name, `Nama produk ${index + 1}`, 100),
-      badge: text(p.badge, `Badge produk ${index + 1}`, 80),
-      oldPrice: price(p.oldPrice, `Harga lama produk ${index + 1}`),
-      price: price(p.price, `Harga produk ${index + 1}`),
+      id,
+      name: text(product.name, `Nama produk ${index + 1}`, 100),
+      badge: text(product.badge, `Badge produk ${index + 1}`, 80),
+      badgeClass,
+      category,
+      oldPrice: price(product.oldPrice, `Harga lama produk ${index + 1}`),
+      price: price(product.price, `Harga produk ${index + 1}`),
     };
   });
   return {

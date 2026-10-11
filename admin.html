@@ -9,6 +9,24 @@
   <style>
     :root{color-scheme:light;--green:#173d27;--green2:#245d38;--gold:#dfb34b;--ink:#18251c;--muted:#647067;--line:#e4e9e4;--paper:#f5f7f4;--white:#fff;--danger:#a92d2d;--success:#206d3d;}
     *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.45}button,input,textarea{font:inherit}button{cursor:pointer;border:0;border-radius:11px;padding:12px 16px;font-weight:700}.primary{background:var(--green);color:#fff}.secondary{background:#edf2ed;color:var(--green);border:1px solid var(--line)}.danger{background:#fff0f0;color:var(--danger);border:1px solid #f1d1d1}button:disabled{opacity:.55;cursor:wait}.hidden{display:none!important}.shell{max-width:1060px;margin:auto;padding:20px 14px 50px}.brand{display:flex;align-items:center;gap:12px;color:white;background:var(--green);border-radius:18px;padding:18px 20px;box-shadow:0 8px 22px #123d2418}.brand-mark{display:grid;place-items:center;width:46px;height:46px;flex:none;border-radius:13px;background:#fff;color:var(--green);font-size:27px}.brand h1{font-size:19px;line-height:1.2;margin:0}.brand p{font-size:12px;color:#d8e7d9;margin:5px 0 0}.brand-spacer{flex:1}.login-card{max-width:440px;margin:55px auto;background:white;border:1px solid var(--line);border-radius:20px;padding:25px;box-shadow:0 12px 32px #122e1b0a}.login-card h2{margin:0 0 8px;font-size:23px}.muted{color:var(--muted);font-size:14px}.field{display:flex;flex-direction:column;gap:7px;min-width:0}.field label{font-size:13px;font-weight:750;color:#34433a}.field input,.field textarea{width:100%;min-width:0;border:1px solid #d9e1d9;background:white;border-radius:10px;padding:11px 12px;outline:none;color:var(--ink)}.field input:focus,.field textarea:focus{border-color:#4e875a;box-shadow:0 0 0 3px #2d82451a}.field textarea{min-height:85px;resize:vertical}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.full{grid-column:1/-1}.section-card{background:white;border:1px solid var(--line);border-radius:17px;padding:19px;margin-top:15px;box-shadow:0 5px 18px #102e1905}.section-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:15px}.section-heading h2{font-size:17px;margin:0}.section-heading p{margin:5px 0 0}.product-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.product-card{border:1px solid var(--line);border-radius:14px;padding:14px;background:#fbfcfb;min-width:0}.product-card h3{margin:0 0 12px;font-size:15px}.product-card .form-grid{gap:10px}.upload-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px}.file-input{font-size:12px;max-width:100%;min-width:0}.upload-row button{padding:9px 12px;font-size:12px}.top-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:14px}.action-group{display:flex;gap:8px;flex-wrap:wrap}.status{display:none;margin:14px 0 0;padding:12px 14px;border-radius:11px;font-size:14px}.status.show{display:block}.status.ok{background:#eaf5ed;color:#1d6235}.status.error{background:#fff0f0;color:#992727}.notice{font-size:12px;color:var(--muted);margin:12px 0 0}.bottom-save{position:sticky;bottom:10px;margin-top:18px;padding:10px;background:#ffffffed;border:1px solid var(--line);border-radius:15px;backdrop-filter:blur(10px);display:flex;justify-content:space-between;align-items:center;gap:10px;box-shadow:0 6px 22px #0b291312}.bottom-save span{font-size:12px;color:var(--muted)}.bottom-save button{flex:none}.panel-intro{padding:14px 4px 2px}.panel-intro h2{font-size:22px;margin:0 0 5px}.section-label{font-size:11px;font-weight:800;letter-spacing:.1em;color:#69806e;text-transform:uppercase;margin-bottom:8px}.price-prefix{position:relative}.price-prefix input{padding-left:41px}.price-prefix:before{content:'Rp';position:absolute;left:12px;top:12px;color:#78827a;font-size:13px}.logo-tag{display:inline-flex;align-items:center;gap:6px;color:#e3bf5b;font-size:11px;font-weight:800;letter-spacing:.05em}.upload-note{color:var(--muted);font-size:11px;flex-basis:100%}@media(max-width:650px){.shell{padding:12px 10px 30px}.brand{padding:14px;border-radius:15px}.brand h1{font-size:17px}.login-card{margin:24px auto;padding:20px}.form-grid,.product-grid{grid-template-columns:1fr}.section-card{padding:15px;margin-top:11px}.full{grid-column:auto}.bottom-save{bottom:6px}.bottom-save span{max-width:48%;line-height:1.25}.section-heading{margin-bottom:12px}}
+
+    .field select{width:100%;min-width:0;border:1px solid #d9e1d9;background:#fff;border-radius:10px;padding:11px 12px;outline:none;color:var(--ink)}
+    .field select:focus{border-color:#4e875a;box-shadow:0 0 0 3px #2d82451a}
+    .management-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px}
+    .management-row button,.product-card .remove-button,.promo-editor-row .remove-button,.testimonial-editor-row .remove-button{padding:9px 12px;font-size:12px}
+    .promo-editor-row{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end}
+    .editable-card-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+    .editable-card-heading h3{margin:0;font-size:15px}
+    .popup-overlay{position:fixed;inset:0;background:#081c10b8;display:none;place-items:center;padding:18px;z-index:10000}
+    .popup-overlay.show{display:grid}
+    .popup-card{width:min(100%,430px);background:#fff;border-radius:22px;padding:26px 23px 21px;box-shadow:0 24px 80px #0005;text-align:center;animation:popup-in .18s ease-out}
+    .popup-icon{width:62px;height:62px;border-radius:50%;margin:0 auto 13px;display:grid;place-items:center;background:#eaf5ed;font-size:31px}
+    .popup-card.error .popup-icon{background:#fff0f0}
+    .popup-card h2{font-size:21px;margin:0 0 8px;color:var(--ink)}
+    .popup-card p{font-size:14px;color:var(--muted);margin:0;white-space:pre-line;overflow-wrap:anywhere}
+    .popup-card button{width:100%;margin-top:21px}
+    @keyframes popup-in{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+    @media(max-width:650px){.promo-editor-row{grid-column:auto;grid-template-columns:minmax(0,1fr) auto}.popup-card{padding:23px 18px 18px}}
   </style>
 </head>
 <body>
@@ -53,11 +71,29 @@
     </section>
   </main>
 
+  <div class="popup-overlay" id="resultModal" role="dialog" aria-modal="true" aria-labelledby="resultModalTitle" aria-describedby="resultModalMessage">
+    <div class="popup-card" id="resultModalCard">
+      <div class="popup-icon" id="resultModalIcon">✅</div>
+      <h2 id="resultModalTitle">Berhasil</h2>
+      <p id="resultModalMessage"></p>
+      <button type="button" class="primary" id="resultModalClose">Mengerti</button>
+    </div>
+  </div>
+
   <script>
     'use strict';
     const $ = (selector, root = document) => root.querySelector(selector);
     let latestData = null;
     let busy = false;
+    let persistedProductIds = new Set();
+
+    const CATEGORY_OPTIONS = [
+      ['musang', 'Musang King'], ['blackthorn', 'Black Thorn'], ['monthong', 'Monthong'],
+      ['kupas', 'Durian Kupas'], ['pancake', 'Pancake Durian'], ['pancakeroll', 'Pancake Rolls'], ['lainnya', 'Lainnya']
+    ];
+    const BADGE_OPTIONS = [
+      ['premium', 'Premium / Emas'], ['flash', 'Flash Sale'], ['best', 'Favorit'], ['new', 'Baru']
+    ];
 
     function esc(value) {
       return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -67,6 +103,25 @@
       element.className = `status show ${isError ? 'error' : 'ok'}`;
     }
     function clearStatus(element) { element.textContent = ''; element.className = 'status'; }
+    function showPopup(title, message, isError = false) {
+      $('#resultModalTitle').textContent = title;
+      $('#resultModalMessage').textContent = message;
+      $('#resultModalIcon').textContent = isError ? '⚠️' : '✅';
+      $('#resultModalCard').classList.toggle('error', isError);
+      $('#resultModal').classList.add('show');
+      $('#resultModalClose').focus({ preventScroll: true });
+    }
+    function hidePopup() {
+      $('#resultModal').classList.remove('show');
+    }
+    $('#resultModalClose').addEventListener('click', hidePopup);
+    $('#resultModal').addEventListener('click', event => {
+      if (event.target === $('#resultModal')) hidePopup();
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') hidePopup();
+    });
+
     async function api(path, options = {}) {
       const response = await fetch(path, { credentials: 'same-origin', cache: 'no-store', ...options, headers: { ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...(options.headers || {}) } });
       let data = {};
@@ -75,37 +130,55 @@
       return data;
     }
     function rupiahInput(value) { return String(Number(value) || 0); }
-    function field(label, id, value, type = 'text', cls = '') {
-      return `<div class="field ${cls}"><label for="${esc(id)}">${esc(label)}</label><input id="${esc(id)}" type="${type}" value="${esc(value)}" ${type === 'number' ? 'min="0" max="1000000000" step="1000" inputmode="numeric"' : ''} required></div>`;
+    function field(label, id, value, type = 'text', cls = '', extra = '') {
+      return `<div class="field ${cls}"><label for="${esc(id)}">${esc(label)}</label><input id="${esc(id)}" type="${esc(type)}" value="${esc(value)}" ${type === 'number' ? 'min="0" max="1000000000" step="1000" inputmode="numeric"' : ''} ${extra}></div>`;
     }
-    function textarea(label, id, value, cls = '') {
-      return `<div class="field ${cls}"><label for="${esc(id)}">${esc(label)}</label><textarea id="${esc(id)}" required>${esc(value)}</textarea></div>`;
+    function textarea(label, id, value, cls = '', placeholder = '') {
+      return `<div class="field ${cls}"><label for="${esc(id)}">${esc(label)}</label><textarea id="${esc(id)}" required placeholder="${esc(placeholder)}">${esc(value)}</textarea></div>`;
     }
-    function fileUpload(target, productId = '') {
+    function selectField(label, id, value, options, cls = '') {
+      const rendered = options.map(([optionValue, labelText]) => `<option value="${esc(optionValue)}" ${optionValue === value ? 'selected' : ''}>${esc(labelText)}</option>`).join('');
+      return `<div class="field ${cls}"><label for="${esc(id)}">${esc(label)}</label><select id="${esc(id)}" required>${rendered}</select></div>`;
+    }
+    function fileUpload(target, productId = '', productSaved = true) {
       const id = target === 'hero' ? 'heroFile' : `file-${productId}`;
       const buttonId = target === 'hero' ? 'uploadHero' : `upload-${productId}`;
-      return `<div class="upload-row"><input class="file-input" id="${esc(id)}" type="file" accept="image/jpeg,image/png,image/webp"><button class="secondary" type="button" id="${esc(buttonId)}">${target === 'hero' ? 'Ganti Banner' : 'Ganti Foto'}</button><span class="upload-note">JPG/PNG/WebP · maksimal 2 MB</span></div>`;
+      const disabled = target === 'product' && !productSaved;
+      const note = disabled ? 'Simpan produk dulu, lalu muat ulang untuk unggah foto.' : 'JPG/PNG/WebP · maksimal 2 MB';
+      return `<div class="upload-row"><input class="file-input" id="${esc(id)}" type="file" accept="image/jpeg,image/png,image/webp" ${disabled ? 'disabled' : ''}><button class="secondary" type="button" id="${esc(buttonId)}" ${disabled ? 'disabled data-requires-save="true"' : ''}>${target === 'hero' ? 'Ganti Banner' : 'Ganti Foto'}</button><span class="upload-note">${esc(note)}</span></div>`;
+    }
+    function productIdNew() {
+      return `admin-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     }
     function renderEditor(data) {
       latestData = data;
       const c = data.contact, h = data.hero, a = data.about;
       const products = data.products.map(p => `
-        <article class="product-card">
-          <h3>${esc(p.name)}</h3>
+        <article class="product-card" data-editor-product-id="${esc(p.id)}">
+          <div class="editable-card-heading"><h3>${esc(p.name || 'Produk baru')}</h3><button class="danger remove-button" type="button" data-action="remove-product" data-id="${esc(p.id)}">Hapus Produk</button></div>
           <div class="form-grid">
             ${field('Nama produk', `product-${p.id}-name`, p.name, 'text', 'full')}
             ${field('Label kecil / badge', `product-${p.id}-badge`, p.badge, 'text', 'full')}
+            ${selectField('Kategori filter website', `product-${p.id}-category`, p.category || 'lainnya', CATEGORY_OPTIONS)}
+            ${selectField('Gaya label / badge', `product-${p.id}-badgeClass`, p.badgeClass || 'premium', BADGE_OPTIONS)}
             ${field('Harga lama (angka)', `product-${p.id}-old`, rupiahInput(p.oldPrice), 'number')}
             ${field('Harga sekarang (angka)', `product-${p.id}-price`, rupiahInput(p.price), 'number')}
           </div>
-          ${fileUpload('product', p.id)}
+          ${fileUpload('product', p.id, persistedProductIds.has(p.id))}
         </article>`).join('');
-      const promos = data.promos.map((item, index) => field(`Promo ${index + 1}`, `promo-${index}`, item, 'text')).join('');
+      const promos = data.promos.map((item, index) => `
+        <div class="promo-editor-row" data-promo-index="${index}">
+          ${field(`Promo ${index + 1}`, `promo-${index}`, item, 'text', '', 'class="promo-input"')}
+          <button class="danger remove-button" type="button" data-action="remove-promo" data-index="${index}">Hapus</button>
+        </div>`).join('');
       const testimonials = data.testimonials.map((item, index) => `
-        <article class="product-card"><h3>Testimoni ${index + 1}</h3><div class="form-grid">
-        ${field('Nama pelanggan', `testimonial-${index}-name`, item.name)}
-        ${textarea('Isi testimoni', `testimonial-${index}-text`, item.text, 'full')}
-        </div></article>`).join('');
+        <article class="product-card testimonial-editor-row" data-testimonial-index="${index}">
+          <div class="editable-card-heading"><h3>Testimoni ${index + 1}</h3><button class="danger remove-button" type="button" data-action="remove-testimonial" data-index="${index}">Hapus</button></div>
+          <div class="form-grid">
+            ${field('Nama pelanggan', `testimonial-${index}-name`, item.name)}
+            ${textarea('Isi testimoni', `testimonial-${index}-text`, item.text, 'full', 'Tulis testimoni pelanggan di sini')}
+          </div>
+        </article>`).join('');
       $('#editor').innerHTML = `
         <section class="section-card"><div class="section-heading"><div><div class="section-label">Kontak toko</div><h2>Informasi yang dilihat pelanggan</h2></div></div><div class="form-grid">
           ${field('Lokasi / alamat singkat', 'contact-location', c.location)}
@@ -125,84 +198,71 @@
           ${textarea('Paragraf pertama', 'about-p1', a.paragraph1, 'full')}
           ${textarea('Paragraf kedua', 'about-p2', a.paragraph2, 'full')}
         </div></section>
-        <section class="section-card"><div class="section-heading"><div><div class="section-label">Promosi</div><h2>Banner teks promo</h2><p class="muted">Mengedit empat kalimat promo bergilir.</p></div></div><div class="form-grid">${promos}</div></section>
-        <section class="section-card"><div class="section-heading"><div><div class="section-label">Produk</div><h2>Harga, nama, dan foto produk</h2><p class="muted">Versi pertama mengelola enam produk yang saat ini ada di website.</p></div></div><div class="product-grid">${products}</div></section>
-        <section class="section-card"><div class="section-heading"><div><div class="section-label">Ulasan pelanggan</div><h2>Testimoni</h2></div></div><div class="product-grid">${testimonials}</div></section>
-        <p class="notice">Foto yang diunggah akan disimpan ke folder assets di GitHub. Setiap penyimpanan membuat commit baru. Jangan tutup halaman sampai muncul pemberitahuan berhasil.</p>`;
+        <section class="section-card"><div class="section-heading"><div><div class="section-label">Promosi</div><h2>Banner teks promo</h2><p class="muted">Tambah atau hapus promo bergilir. Minimal satu promo harus ada.</p></div><button class="primary" type="button" data-action="add-promo">+ Tambah Promo</button></div><div class="form-grid">${promos}</div></section>
+        <section class="section-card"><div class="section-heading"><div><div class="section-label">Produk</div><h2>Harga, nama, dan foto produk</h2><p class="muted">Tambah/hapus produk. Card baru mengikuti desain card produk website. Setelah produk disimpan, unggah fotonya.</p></div><button class="primary" type="button" data-action="add-product">+ Tambah Produk</button></div><div class="product-grid">${products}</div></section>
+        <section class="section-card"><div class="section-heading"><div><div class="section-label">Ulasan pelanggan</div><h2>Testimoni</h2><p class="muted">Tambah atau hapus testimoni pelanggan.</p></div><button class="primary" type="button" data-action="add-testimonial">+ Tambah Testimoni</button></div><div class="product-grid">${testimonials || '<p class="muted">Belum ada testimoni. Gunakan tombol Tambah Testimoni untuk menambah.</p>'}</div></section>
+        <p class="notice">Foto yang diunggah disimpan ke folder assets di GitHub. Setiap penyimpanan membuat commit baru. Jangan tutup halaman sampai popup hasil muncul.</p>`;
       $('#uploadHero').addEventListener('click', () => uploadImage('hero', '', $('#heroFile')));
       for (const product of data.products) {
-        $(`#upload-${product.id}`).addEventListener('click', () => uploadImage('product', product.id, $(`#file-${product.id}`)));
+        const button = $(`#upload-${product.id}`);
+        if (button && persistedProductIds.has(product.id)) button.addEventListener('click', () => uploadImage('product', product.id, $(`#file-${product.id}`)));
       }
     }
     function readForm() {
-      const value = id => $(id).value.trim();
+      const value = id => { const element = $(id); return element ? element.value.trim() : ''; };
+      const products = Array.from($('#editor').querySelectorAll('[data-editor-product-id]')).map(card => {
+        const id = card.dataset.editorProductId;
+        return {
+          id,
+          name: value(`#product-${id}-name`),
+          badge: value(`#product-${id}-badge`),
+          category: value(`#product-${id}-category`),
+          badgeClass: value(`#product-${id}-badgeClass`),
+          oldPrice: Number(value(`#product-${id}-old`)),
+          price: Number(value(`#product-${id}-price`)),
+        };
+      });
+      const promos = Array.from($('#editor').querySelectorAll('[data-promo-index]')).map(row => value(`#promo-${row.dataset.promoIndex}`));
+      const testimonials = Array.from($('#editor').querySelectorAll('[data-testimonial-index]')).map(row => ({
+        name: value(`#testimonial-${row.dataset.testimonialIndex}-name`),
+        text: value(`#testimonial-${row.dataset.testimonialIndex}-text`),
+      }));
       return {
         contact: { location: value('#contact-location'), phonePrimary: value('#contact-phone-primary'), phoneWhatsapp: value('#contact-phone-wa'), email: value('#contact-email'), hours: value('#contact-hours') },
         hero: { title: value('#hero-title'), subtitle: value('#hero-subtitle'), story: value('#hero-story'), tagline: value('#hero-tagline') },
         about: { title: value('#about-title'), paragraph1: value('#about-p1'), paragraph2: value('#about-p2') },
-        promos: [0,1,2,3].map(index => value(`#promo-${index}`)),
-        products: latestData.products.map(product => ({
-          id: product.id,
-          name: value(`#product-${product.id}-name`),
-          badge: value(`#product-${product.id}-badge`),
-          oldPrice: Number(value(`#product-${product.id}-old`)),
-          price: Number(value(`#product-${product.id}-price`)),
-        })),
-        testimonials: [0,1,2].map(index => ({ name: value(`#testimonial-${index}-name`), text: value(`#testimonial-${index}-text`) })),
+        promos, products, testimonials,
       };
-    }
-    function applyForm(data) {
-      const set = (id, value) => { const element = $(id); if (element) element.value = value ?? ''; };
-      set('#contact-location', data.contact.location);
-      set('#contact-phone-primary', data.contact.phonePrimary);
-      set('#contact-phone-wa', data.contact.phoneWhatsapp);
-      set('#contact-email', data.contact.email);
-      set('#contact-hours', data.contact.hours);
-      set('#hero-title', data.hero.title);
-      set('#hero-subtitle', data.hero.subtitle);
-      set('#hero-story', data.hero.story);
-      set('#hero-tagline', data.hero.tagline);
-      set('#about-title', data.about.title);
-      set('#about-p1', data.about.paragraph1);
-      set('#about-p2', data.about.paragraph2);
-      data.promos.forEach((value, index) => set(`#promo-${index}`, value));
-      data.products.forEach(product => {
-        set(`#product-${product.id}-name`, product.name);
-        set(`#product-${product.id}-badge`, product.badge);
-        set(`#product-${product.id}-old`, product.oldPrice);
-        set(`#product-${product.id}-price`, product.price);
-      });
-      data.testimonials.forEach((item, index) => {
-        set(`#testimonial-${index}-name`, item.name);
-        set(`#testimonial-${index}-text`, item.text);
-      });
     }
     async function loadEditor() {
       clearStatus($('#mainStatus'));
       $('#editor').innerHTML = '<div class="section-card">Memuat data website dari GitHub…</div>';
       const result = await api('/api/admin/content');
+      persistedProductIds = new Set(result.data.products.map(product => product.id));
       renderEditor(result.data);
       showStatus($('#mainStatus'), 'Data website berhasil dimuat. Silakan edit, lalu simpan.', false);
     }
     async function uploadImage(target, productId, fileInput) {
       if (busy) return;
       const pendingEdits = readForm();
-      const file = fileInput.files && fileInput.files[0];
-      if (!file) return showStatus($('#mainStatus'), 'Pilih file gambar terlebih dahulu.', true);
-      if (!['image/jpeg','image/png','image/webp'].includes(file.type)) return showStatus($('#mainStatus'), 'Gunakan gambar JPG, PNG, atau WebP.', true);
-      if (file.size > 2 * 1024 * 1024) return showStatus($('#mainStatus'), 'Ukuran gambar maksimal 2 MB.', true);
+      const file = fileInput && fileInput.files && fileInput.files[0];
+      if (!file) return showPopup('Pilih gambar', 'Pilih file gambar terlebih dahulu.', true);
+      if (!['image/jpeg','image/png','image/webp'].includes(file.type)) return showPopup('Format tidak didukung', 'Gunakan gambar JPG, PNG, atau WebP.', true);
+      if (file.size > 2 * 1024 * 1024) return showPopup('Ukuran terlalu besar', 'Ukuran gambar maksimal 2 MB.', true);
+      if (target === 'product' && !persistedProductIds.has(productId)) return showPopup('Simpan produk dulu', 'Simpan produk baru terlebih dahulu. Setelah data dimuat ulang, tombol unggah fotonya akan aktif.', true);
       if (!confirm('Unggah gambar dan perbarui website sekarang? Ini akan membuat commit di GitHub.')) return;
+      busy = true;
+      setButtons(true);
       try {
-        busy = true;
-        setButtons(true);
         showStatus($('#mainStatus'), 'Mengunggah gambar ke GitHub…');
         const dataUrl = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = () => reject(new Error('File tidak dapat dibaca.')); reader.readAsDataURL(file); });
         const result = await api('/api/admin/upload', { method: 'POST', body: JSON.stringify({ target, productId, dataUrl }) });
-        await loadEditor();
-        applyForm(pendingEdits);
+        try { await loadEditor(); renderEditor(pendingEdits); } catch (refreshError) { /* Upload succeeded; retain the success response. */ }
         showStatus($('#mainStatus'), result.message || 'Gambar berhasil diunggah.');
+        showPopup('Foto berhasil diperbarui', result.message || 'Gambar berhasil diunggah dan perubahan dikirim ke GitHub.', false);
       } catch (error) {
         showStatus($('#mainStatus'), error.message, true);
+        showPopup('Gagal mengunggah foto', error.message, true);
       } finally {
         busy = false;
         setButtons(false);
@@ -210,14 +270,13 @@
     }
     function setButtons(disabled) {
       ['#loginButton','#reloadButton','#logoutButton','#saveButton'].forEach(selector => { const el = $(selector); if (el) el.disabled = disabled; });
-      document.querySelectorAll('[id^="upload-"]').forEach(button => { button.disabled = disabled; });
-      const heroButton = $('#uploadHero'); if (heroButton) heroButton.disabled = disabled;
+      document.querySelectorAll('#editor button').forEach(button => { button.disabled = disabled || button.dataset.temporarilyDisabled === 'true' || button.dataset.requiresSave === 'true'; });
     }
     async function showDashboard() {
       $('#loginCard').classList.add('hidden');
       $('#dashboard').classList.remove('hidden');
       try { await loadEditor(); }
-      catch (error) { showStatus($('#mainStatus'), error.message, true); }
+      catch (error) { showStatus($('#mainStatus'), error.message, true); showPopup('Gagal memuat website', error.message, true); }
     }
     function showLogin() {
       $('#dashboard').classList.add('hidden');
@@ -234,29 +293,84 @@
       } catch (error) { showStatus($('#loginStatus'), error.message, true); }
       finally { busy = false; setButtons(false); }
     });
+    $('#editor').addEventListener('click', event => {
+      const button = event.target.closest('button[data-action]');
+      if (!button || busy) return;
+      const action = button.dataset.action;
+      const data = readForm();
+      if (action === 'add-product') {
+        if (data.products.length >= 50) return showPopup('Batas produk tercapai', 'Maksimal 50 produk dapat dikelola.', true);
+        const product = { id: productIdNew(), name: 'Produk baru', badge: '✨ Baru', badgeClass: 'new', category: 'lainnya', oldPrice: 0, price: 0 };
+        data.products.push(product);
+        renderEditor(data);
+        showStatus($('#mainStatus'), 'Produk baru ditambahkan ke formulir. Isi nama dan harganya, lalu simpan.');
+        $(`#product-${product.id}-name`).focus();
+      } else if (action === 'remove-product') {
+        if (data.products.length <= 1) return showPopup('Produk tidak bisa dihapus', 'Minimal satu produk harus tetap tersedia di website.', true);
+        const id = button.dataset.id;
+        const product = data.products.find(item => item.id === id);
+        if (!confirm(`Hapus produk “${product ? product.name : id}” dari website? Perubahan baru diterapkan setelah tombol Simpan Perubahan ditekan.`)) return;
+        data.products = data.products.filter(item => item.id !== id);
+        renderEditor(data);
+        showStatus($('#mainStatus'), 'Produk ditandai untuk dihapus. Tekan Simpan Perubahan untuk menerapkannya ke website.');
+      } else if (action === 'add-promo') {
+        if (data.promos.length >= 20) return showPopup('Batas promo tercapai', 'Maksimal 20 promo dapat ditampilkan.', true);
+        data.promos.push('');
+        renderEditor(data);
+        showStatus($('#mainStatus'), 'Promo baru ditambahkan. Isi teks promo sebelum menyimpan.');
+        $(`#promo-${data.promos.length - 1}`).focus();
+      } else if (action === 'remove-promo') {
+        if (data.promos.length <= 1) return showPopup('Promo tidak bisa dihapus', 'Minimal satu promo harus tetap tersedia agar slider berfungsi.', true);
+        const index = Number(button.dataset.index);
+        if (!confirm(`Hapus Promo ${index + 1}? Perubahan baru diterapkan setelah disimpan.`)) return;
+        data.promos.splice(index, 1);
+        renderEditor(data);
+        showStatus($('#mainStatus'), 'Promo ditandai untuk dihapus. Tekan Simpan Perubahan untuk menerapkannya.');
+      } else if (action === 'add-testimonial') {
+        if (data.testimonials.length >= 30) return showPopup('Batas testimoni tercapai', 'Maksimal 30 testimoni dapat ditampilkan.', true);
+        data.testimonials.push({ name: '', text: '' });
+        renderEditor(data);
+        showStatus($('#mainStatus'), 'Testimoni baru ditambahkan. Isi nama dan testimoni asli sebelum menyimpan.');
+        $(`#testimonial-${data.testimonials.length - 1}-name`).focus();
+      } else if (action === 'remove-testimonial') {
+        const index = Number(button.dataset.index);
+        if (!confirm(`Hapus Testimoni ${index + 1}? Perubahan baru diterapkan setelah disimpan.`)) return;
+        data.testimonials.splice(index, 1);
+        renderEditor(data);
+        showStatus($('#mainStatus'), 'Testimoni ditandai untuk dihapus. Tekan Simpan Perubahan untuk menerapkannya.');
+      }
+    });
     $('#saveButton').addEventListener('click', async () => {
       if (busy) return;
       busy = true; setButtons(true);
       try {
         showStatus($('#mainStatus'), 'Menyimpan perubahan ke GitHub…');
         const result = await api('/api/admin/content', { method: 'POST', body: JSON.stringify(readForm()) });
-        await loadEditor();
+        let refreshNote = '';
+        try { await loadEditor(); }
+        catch (refreshError) { refreshNote = '\nCatatan: penyimpanan sudah berhasil, tetapi formulir gagal dimuat ulang. Tekan Muat ulang setelah menutup popup.'; }
         showStatus($('#mainStatus'), result.message || 'Perubahan berhasil disimpan.');
-      } catch (error) { showStatus($('#mainStatus'), error.message, true); }
-      finally { busy = false; setButtons(false); }
+        showPopup(result.unchanged ? 'Tidak ada perubahan' : 'Perubahan berhasil disimpan', (result.message || 'Perubahan berhasil disimpan.') + refreshNote, false);
+      } catch (error) {
+        showStatus($('#mainStatus'), error.message, true);
+        showPopup('Gagal menyimpan perubahan', error.message, true);
+      } finally {
+        busy = false;
+        setButtons(false);
+      }
     });
     $('#reloadButton').addEventListener('click', async () => {
       if (busy) return;
       busy = true; setButtons(true);
-      try { await loadEditor(); }
-      catch (error) { showStatus($('#mainStatus'), error.message, true); }
+      try { await loadEditor(); showPopup('Data dimuat ulang', 'Data terbaru dari GitHub berhasil dibaca.', false); }
+      catch (error) { showStatus($('#mainStatus'), error.message, true); showPopup('Gagal memuat data', error.message, true); }
       finally { busy = false; setButtons(false); }
     });
     $('#logoutButton').addEventListener('click', async () => {
       if (busy) return;
       busy = true; setButtons(true);
-      try { await api('/api/admin/logout', { method: 'POST', body: JSON.stringify({}) }); showLogin(); clearStatus($('#mainStatus')); }
-      catch (error) { showStatus($('#mainStatus'), error.message, true); }
+      try { await api('/api/admin/logout', { method: 'POST', body: JSON.stringify({}) }); showLogin(); clearStatus($('#mainStatus')); hidePopup(); }
+      catch (error) { showStatus($('#mainStatus'), error.message, true); showPopup('Gagal keluar', error.message, true); }
       finally { busy = false; setButtons(false); }
     });
     (async function init() {
