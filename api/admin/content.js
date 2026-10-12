@@ -267,7 +267,11 @@ function extractGalleryImages(gallerySection) {
 function extractGalleryVideoInfo(gallerySection) {
   const grid = findElementByClass(gallerySection, 'div', 'gallery-grid');
   if (!grid) throw new Error('Daftar media pada Galeri EGYA DURIAN tidak ditemukan.');
-  const result = { active: '', archived: '' };
+  const sectionOpen = (gallerySection.match(/<section\b[^>]*>/i) || [''])[0];
+  // New format stores the hidden video's URL as section metadata, not as a
+  // hidden <video> element in the public gallery. This prevents an empty player
+  // from still taking up space on the customer-facing page.
+  const result = { active: '', archived: getAttribute(sectionOpen, 'data-admin-gallery-video-archive').trim() };
   for (const videoMatch of grid.inner.matchAll(/<video\b[^>]*>[\s\S]*?<\/video>/gi)) {
     const whole = videoMatch[0];
     const videoOpen = (whole.match(/^<video\b[^>]*>/i) || [''])[0];
@@ -276,7 +280,7 @@ function extractGalleryVideoInfo(gallerySection) {
     if (!src) continue;
     const classes = classTokens(videoOpen);
     const archived = getAttribute(videoOpen, 'data-admin-gallery-hidden') === 'true' || /\bhidden(?:\s|=|>)/i.test(videoOpen) || classes.includes('gallery-video-archived');
-    if (archived && !result.archived) result.archived = src;
+    if (archived && !result.archived) result.archived = src; // Backward compatibility for old v5/v6 markup.
     else if (!archived && classes.includes('gallery-item') && !result.active) result.active = src;
   }
   return result;
@@ -291,18 +295,13 @@ function videoMimeForPath(videoPath) {
   try { pathname = new URL(pathname).pathname; } catch { /* assets/relative path */ }
   return /\.webm$/i.test(pathname) ? 'video/webm' : (/\.(?:ogv|ogg)$/i.test(pathname) ? 'video/ogg' : 'video/mp4');
 }
-function updateVideoMarkup(template, videoPath, archived) {
+function updateVideoMarkup(template, videoPath) {
   const mime = videoMimeForPath(videoPath);
-  let markup = template || `<video class="${archived ? 'gallery-video-archived' : 'gallery-item'}" playsinline preload="metadata" muted><source src="${htmlEscape(videoPath)}" type="${mime}">Browser Anda tidak mendukung video.</video>`;
+  let markup = template || `<video class="gallery-item" playsinline preload="metadata" muted><source src="${htmlEscape(videoPath)}" type="${mime}">Browser Anda tidak mendukung video.</video>`;
   const videoOpen = (markup.match(/^<video\b[^>]*>/i) || [''])[0];
   if (!videoOpen) throw new Error('Elemen video Galeri EGYA DURIAN tidak valid.');
-  let nextOpen = setAttribute(videoOpen, 'class', archived ? 'gallery-video-archived' : 'gallery-item');
-  if (archived) {
-    nextOpen = setAttribute(nextOpen, 'hidden', '');
-    nextOpen = setAttribute(nextOpen, 'data-admin-gallery-hidden', 'true');
-  } else {
-    nextOpen = removeAttribute(removeAttribute(nextOpen, 'hidden'), 'data-admin-gallery-hidden');
-  }
+  let nextOpen = setAttribute(videoOpen, 'class', 'gallery-item');
+  nextOpen = removeAttribute(removeAttribute(nextOpen, 'hidden'), 'data-admin-gallery-hidden');
   markup = markup.replace(videoOpen, nextOpen);
   const sourcePattern = /<source\b[^>]*>/i;
   if (sourcePattern.test(markup)) {
@@ -311,6 +310,23 @@ function updateVideoMarkup(template, videoPath, archived) {
     markup = markup.replace(/<\/video>/i, `<source src="${htmlEscape(videoPath)}" type="${mime}"></video>`);
   }
   return markup;
+}
+function galleryVideoMarkupNeedsNormalization(section, activeVideoPath, archivedVideoPath) {
+  const grid = findElementByClass(section, 'div', 'gallery-grid');
+  if (!grid) throw new Error('Daftar media pada Galeri EGYA DURIAN tidak ditemukan.');
+  const videos = [...grid.inner.matchAll(/<video\b[^>]*>[\s\S]*?<\/video>/gi)].map(match => match[0]);
+  const hiddenVideoExists = videos.some(markup => {
+    const open = (markup.match(/^<video\b[^>]*>/i) || [''])[0];
+    return getAttribute(open, 'data-admin-gallery-hidden') === 'true' || /\bhidden(?:\s|=|>)/i.test(open) || classTokens(open).includes('gallery-video-archived');
+  });
+  const activeVideos = videos.filter(markup => {
+    const open = (markup.match(/^<video\b[^>]*>/i) || [''])[0];
+    const hidden = getAttribute(open, 'data-admin-gallery-hidden') === 'true' || /\bhidden(?:\s|=|>)/i.test(open) || classTokens(open).includes('gallery-video-archived');
+    return !hidden && classTokens(open).includes('gallery-item');
+  });
+  const sectionOpen = (section.match(/<section\b[^>]*>/i) || [''])[0];
+  const savedArchive = getAttribute(sectionOpen, 'data-admin-gallery-video-archive').trim();
+  return hiddenVideoExists || activeVideos.length !== (activeVideoPath ? 1 : 0) || savedArchive !== (archivedVideoPath || '');
 }
 function updateGalleryVideoSection(section, activeVideoPath, archivedVideoPath) {
   const grid = findElementByClass(section, 'div', 'gallery-grid');
@@ -321,20 +337,25 @@ function updateGalleryVideoSection(section, activeVideoPath, archivedVideoPath) 
     const open = (markup.match(/^<video\b[^>]*>/i) || [''])[0];
     const classes = classTokens(open);
     const hidden = getAttribute(open, 'data-admin-gallery-hidden') === 'true' || /\bhidden(?:\s|=|>)/i.test(open) || classes.includes('gallery-video-archived');
-    const source = (markup.match(/<source\b[^>]*>/i) || [''])[0];
-    const path = (source ? getAttribute(source, 'src') : getAttribute(open, 'src')).trim();
-    return { markup, hidden, path };
+    return { markup, hidden };
   });
   const activeTemplate = details.find(video => !video.hidden) || details[0] || null;
-  const archivedTemplate = details.find(video => video.hidden) || activeTemplate;
   const pieces = [];
-  if (activeVideoPath) pieces.push(updateVideoMarkup(activeTemplate ? activeTemplate.markup : '', activeVideoPath, false));
-  if (archivedVideoPath) pieces.push(updateVideoMarkup(archivedTemplate ? archivedTemplate.markup : (activeTemplate ? activeTemplate.markup : ''), archivedVideoPath, true));
+  // Only an active video element is rendered inside the public gallery grid.
+  // A hidden/archived URL is metadata on the section, never a dormant player.
+  if (activeVideoPath) pieces.push(updateVideoMarkup(activeTemplate ? activeTemplate.markup : '', activeVideoPath));
   let nextInner = grid.inner.replace(videoPattern, '').trimEnd();
   if (pieces.length) nextInner = `${nextInner}${nextInner ? '\n\n' : ''}${pieces.join('\n\n')}`;
   const innerStart = grid.start + grid.openTag.length;
   const innerEnd = grid.end - grid.closeTag.length;
-  return section.slice(0, innerStart) + nextInner + section.slice(innerEnd);
+  let updated = section.slice(0, innerStart) + nextInner + section.slice(innerEnd);
+  const sectionOpen = (updated.match(/<section\b[^>]*>/i) || [''])[0];
+  if (!sectionOpen) throw new Error('Pembuka bagian Galeri EGYA DURIAN tidak ditemukan.');
+  const nextSectionOpen = archivedVideoPath
+    ? setAttribute(sectionOpen, 'data-admin-gallery-video-archive', archivedVideoPath)
+    : removeAttribute(sectionOpen, 'data-admin-gallery-video-archive');
+  updated = updated.replace(sectionOpen, nextSectionOpen);
+  return updated;
 }
 
 function updateGallerySection(section, submittedGallery) {
@@ -520,10 +541,15 @@ function updateContent(html, submitted) {
     const block = updateGallerySection(region.text, input.gallery);
     updated = updated.slice(0, region.start) + block + updated.slice(region.end);
   }
-  if (input.galleryVideo !== null && input.galleryVideoArchive !== null && (input.galleryVideo !== current.galleryVideo || input.galleryVideoArchive !== current.galleryVideoArchive)) {
+  if (input.galleryVideo !== null && input.galleryVideoArchive !== null) {
     const region = getRegion(updated, /<section\b(?=[^>]*\bid=["']gallery["'])[\s\S]*?<\/section>/i, 'gallery website');
-    const block = updateGalleryVideoSection(region.text, input.galleryVideo, input.galleryVideoArchive);
-    updated = updated.slice(0, region.start) + block + updated.slice(region.end);
+    const videoValuesChanged = input.galleryVideo !== current.galleryVideo || input.galleryVideoArchive !== current.galleryVideoArchive;
+    // Also migrate old v5/v6 HTML that placed an archived <video hidden> inside
+    // the public grid. Save once after upgrading and the dead player is removed.
+    if (videoValuesChanged || galleryVideoMarkupNeedsNormalization(region.text, input.galleryVideo, input.galleryVideoArchive)) {
+      const block = updateGalleryVideoSection(region.text, input.galleryVideo, input.galleryVideoArchive);
+      updated = updated.slice(0, region.start) + block + updated.slice(region.end);
+    }
   }
 
   return updated;
@@ -652,3 +678,7 @@ module.exports = async function handler(req, res) {
     return sendJson(res, status, { ok: false, message });
   }
 };
+
+// Shared by the admin-only permanent video deletion endpoint.
+module.exports.getAdminData = getAdminData;
+module.exports.updateContent = updateContent;

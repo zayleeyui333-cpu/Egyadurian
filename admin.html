@@ -275,8 +275,11 @@
             Browser Anda tidak mendukung video.
           </video>
           <div class="photo-path">${esc(galleryVideoPath)}</div>
-          <button class="danger" type="button" data-action="remove-gallery-video">Hapus Video dari Galeri</button>
-          <p class="notice">${galleryVideoPending ? 'Video baru sudah diunggah ke penyimpanan, tetapi belum menggantikan video publik. Tekan Simpan Perubahan untuk mengaktifkannya.' : 'Video aktif tampil kepada pengunjung. Menghapusnya dari galeri tidak menghapus file aslinya.'}</p>
+          <div class="management-row">
+            <button class="secondary" type="button" data-action="remove-gallery-video">Hide Video</button>
+            <button class="danger" type="button" data-action="delete-gallery-video-permanently" data-video-url="${esc(galleryVideoPath)}" data-pending-upload="${galleryVideoPending ? 'true' : 'false'}">Hapus Video Permanen</button>
+          </div>
+          <p class="notice">${galleryVideoPending ? 'Video baru masih berupa draf. Hide akan menyimpannya sebagai arsip; Hapus Permanen akan menghapus file draf dari penyimpanan.' : 'Hide menyembunyikan video dan memungkinkan dipulihkan. Hapus Permanen menghapus file dari penyimpanan dan menghapus referensinya dari galeri.'}</p>
         </div>` : `
         <div class="site-gallery-video-panel">
           <strong style="display:block">Video Galeri EGYA DURIAN · Tidak ada video aktif</strong>
@@ -284,14 +287,17 @@
         </div>`;
       const galleryVideoArchivePanel = galleryVideoArchivePath ? `
         <div class="site-gallery-video-panel">
-          <strong style="display:block">Video sebelumnya · Tersimpan</strong>
+          <strong style="display:block">Video tersembunyi · Arsip</strong>
           <video class="site-gallery-video-preview" controls playsinline preload="metadata" muted>
             <source src="${esc(galleryVideoArchivePath)}" type="${videoMimeForPath(galleryVideoArchivePath)}">
             Browser Anda tidak mendukung video.
           </video>
           <div class="photo-path">${esc(galleryVideoArchivePath)}</div>
-          <button class="secondary" type="button" data-action="restore-gallery-video">Jadikan Video Ini Aktif</button>
-          <p class="notice">Video ini disembunyikan dari galeri publik. Klik tombol di atas untuk menukar video aktif dengan video ini.</p>
+          <div class="management-row">
+            <button class="primary" type="button" data-action="restore-gallery-video">Tampilkan Kembali Video</button>
+            <button class="danger" type="button" data-action="delete-gallery-video-permanently" data-video-url="${esc(galleryVideoArchivePath)}">Hapus Video Permanen</button>
+          </div>
+          <p class="notice">Video ini tidak ditampilkan di galeri publik. Tampilkan kembali untuk memulihkannya, atau Hapus Video Permanen untuk menghapus file dan referensinya.</p>
         </div>` : '';
       const galleryVideo = galleryVideoActivePanel + galleryVideoArchivePanel;
       $('#editor').innerHTML = `
@@ -313,7 +319,7 @@
           ${textarea('Paragraf pertama', 'about-p1', a.paragraph1, 'full')}
           ${textarea('Paragraf kedua', 'about-p2', a.paragraph2, 'full')}
         </div></section>
-        <section class="section-card"><div class="section-heading"><div><div class="section-label">Galeri website</div><h2>Galeri EGYA DURIAN</h2><p class="muted">Ini khusus untuk bagian “Galeri EGYA DURIAN” di halaman utama, bukan galeri foto di dalam produk. Foto/video yang dihapus akan dilepas dari halaman; file aslinya tetap tersimpan di assets.</p></div></div>
+        <section class="section-card"><div class="section-heading"><div><div class="section-label">Galeri website</div><h2>Galeri EGYA DURIAN</h2><p class="muted">Ini khusus untuk bagian “Galeri EGYA DURIAN” di halaman utama, bukan galeri foto di dalam produk. Hide hanya menyembunyikan video dan bisa dibatalkan. Hapus Video Permanen menghapus file dari Blob atau folder assets GitHub serta melepasnya dari galeri.</p></div></div>
           <div class="site-gallery-grid">${gallery || '<p class="muted">Belum ada foto di galeri website.</p>'}</div>
           <div class="gallery-upload-row"><div class="field"><label for="siteGalleryFile">Pilih foto untuk Galeri EGYA DURIAN</label><input class="file-input" id="siteGalleryFile" type="file" accept="image/jpeg,image/png,image/webp"><span class="upload-note">JPG/PNG/WebP · maksimal 2 MB per foto</span></div><button class="primary" id="uploadSiteGallery" type="button">+ Tambah Foto Galeri</button></div>
           ${galleryVideo}
@@ -333,7 +339,7 @@
             <div class="video-upload-progress" id="videoUploadProgress" role="status" aria-live="polite"></div>
             <p class="notice">Setelah unggah berhasil, video masih berupa draf. Tekan Simpan Perubahan untuk menerbitkannya. Video sebelumnya tetap tersimpan sebagai versi sebelumnya, bukan dihapus permanen.</p>
           </div>
-          <p class="notice">Penghapusan foto atau video baru diterapkan saat tombol Simpan Perubahan ditekan. File video lama tidak dihapus dari penyimpanan.</p>
+          <p class="notice">Penghapusan foto dari galeri diterapkan saat Simpan Perubahan. Aksi Hide Video juga memerlukan Simpan Perubahan; Hapus Video Permanen dilakukan langsung setelah konfirmasi dan tidak bisa dipulihkan. File yang dihapus dari GitHub masih dapat tercatat pada riwayat commit lama.</p>
         </section>
         <section class="section-card"><div class="section-heading"><div><div class="section-label">Promosi</div><h2>Banner teks promo</h2><p class="muted">Tambah atau hapus promo bergilir. Minimal satu promo harus ada.</p></div><button class="primary" type="button" data-action="add-promo">+ Tambah Promo</button></div><div class="form-grid">${promos}</div></section>
         <section class="section-card"><div class="section-heading"><div><div class="section-label">Produk</div><h2>Harga, nama, dan foto produk</h2><p class="muted">Tambah/hapus produk. Card baru mengikuti desain card produk website. Setelah produk disimpan, unggah fotonya.</p></div><button class="primary" type="button" data-action="add-product">+ Tambah Produk</button></div><div class="product-grid">${products}</div></section>
@@ -669,12 +675,52 @@ Pastikan Vercel Blob Store sudah dibuat sebagai Public dan terhubung ke project 
       const summary = $(`#pending-photo-list-${productId}`);
       if (summary) summary.textContent = files.length ? `${files.length} foto dipilih: ${files.map(file => file.name).join(', ')}` : 'Belum ada foto dipilih.';
     });
+    async function handlePermanentVideoDelete(button) {
+      if (busy) return;
+      const videoUrl = button.dataset.videoUrl || '';
+      const pendingUpload = button.dataset.pendingUpload === 'true' && videoUrl === pendingGalleryVideoUrl;
+      if (!videoUrl) return showPopup('Video tidak ditemukan', 'Muat ulang halaman admin lalu coba lagi.', true);
+      const warning = pendingUpload
+        ? 'Video draf ini akan dihapus dari Vercel Blob. Video publik yang saat ini tersimpan di GitHub tidak akan diubah.'
+        : 'Video akan dihapus dari penyimpanan (Vercel Blob atau folder assets GitHub) dan referensinya dihapus dari Galeri EGYA DURIAN. Aksi ini tidak bisa dibatalkan melalui admin.';
+      if (!confirm(`HAPUS VIDEO PERMANEN?
+
+${videoUrl}
+
+${warning}
+
+Lanjutkan?`)) return;
+      busy = true; setButtons(true);
+      try {
+        showStatus($('#mainStatus'), 'Menghapus video permanen dari galeri dan penyimpanan…');
+        const result = await api('/api/admin/video-delete', {
+          method: 'POST',
+          body: JSON.stringify({ videoUrl, pendingUpload }),
+        });
+        pendingGalleryVideoUrl = '';
+        await loadEditor();
+        const message = result.message || 'Video berhasil dihapus permanen.';
+        showStatus($('#mainStatus'), message, false);
+        showPopup('Video dihapus permanen', message, false);
+      } catch (error) {
+        showStatus($('#mainStatus'), error.message, true);
+        showPopup('Gagal menghapus video', error.message, true);
+      } finally {
+        busy = false;
+        setButtons(false);
+      }
+    }
+
     $('#editor').addEventListener('click', event => {
       const photoButton = event.target.closest('button[data-photo-action]');
       if (photoButton) { handleProductPhotoAction(photoButton); return; }
       const button = event.target.closest('button[data-action]');
       if (!button || busy) return;
       const action = button.dataset.action;
+      if (action === 'delete-gallery-video-permanently') {
+        handlePermanentVideoDelete(button);
+        return;
+      }
       const data = readForm();
       if (action === 'remove-gallery-photo') {
         const index = Number(button.dataset.index);
@@ -686,13 +732,13 @@ Pastikan Vercel Blob Store sudah dibuat sebagai Public dan terhubung ke project 
         showStatus($('#mainStatus'), 'Foto ditandai untuk dihapus dari galeri website. Tekan Simpan Perubahan untuk menerapkannya.');
       } else if (action === 'remove-gallery-video') {
         if (!data.galleryVideo) return showPopup('Video tidak ditemukan', 'Muat ulang data galeri lalu coba lagi.', true);
-        if (!confirm(`Sembunyikan video aktif dari Galeri EGYA DURIAN?\n\n${data.galleryVideo}\n\nFile aslinya tidak dihapus. Perubahan baru diterapkan setelah Simpan Perubahan.`)) return;
+        if (!confirm(`Hide Video dari Galeri EGYA DURIAN?\n\n${data.galleryVideo}\n\nVideo tidak tampil di website tetapi tersimpan sebagai arsip sehingga bisa ditampilkan kembali. Tekan Simpan Perubahan untuk menerapkan.`)) return;
         data.galleryVideoArchive = data.galleryVideo || data.galleryVideoArchive || persistedGalleryVideoPath || persistedGalleryVideoArchivePath;
         data.galleryVideo = '';
         pendingGalleryVideoUrl = '';
         if (!data.galleryVideoArchive) return showPopup('File video tidak ditemukan', 'Path video tidak tersedia untuk disimpan sebagai video arsip.', true);
         renderEditor(data);
-        showStatus($('#mainStatus'), 'Video ditandai untuk disembunyikan dari galeri website. Tekan Simpan Perubahan untuk menerapkannya. File video tetap tersimpan.');
+        showStatus($('#mainStatus'), 'Video ditandai untuk di-hide. Tekan Simpan Perubahan agar player hilang dari galeri publik; video akan tetap tersedia untuk ditampilkan kembali.');
       } else if (action === 'restore-gallery-video') {
         const path = data.galleryVideoArchive || persistedGalleryVideoArchivePath || persistedGalleryVideoPath;
         if (!path) return showPopup('Video tidak dapat dipulihkan', 'Path file video tidak tersedia. Muat ulang data galeri lalu coba lagi.', true);
@@ -701,7 +747,7 @@ Pastikan Vercel Blob Store sudah dibuat sebagai Public dan terhubung ke project 
         data.galleryVideoArchive = previousActive && previousActive !== path ? previousActive : '';
         pendingGalleryVideoUrl = '';
         renderEditor(data);
-        showStatus($('#mainStatus'), 'Video pilihan ditandai sebagai video aktif. Video sebelumnya tetap tersedia sebagai arsip. Tekan Simpan Perubahan untuk menerapkannya.');
+        showStatus($('#mainStatus'), 'Video ditandai untuk ditampilkan kembali. Tekan Simpan Perubahan untuk menerapkannya ke website.');
       } else if (action === 'add-product') {
         if (data.products.length >= 50) return showPopup('Batas produk tercapai', 'Maksimal 50 produk dapat dikelola.', true);
         const product = { id: productIdNew(), name: 'Produk baru', badge: '✨ Baru', badgeClass: 'new', category: 'lainnya', oldPrice: 0, price: 0 };
