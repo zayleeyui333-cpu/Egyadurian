@@ -1,6 +1,7 @@
 'use strict';
 
-const { handleUpload } = require('@vercel/blob/client');
+const { issueSignedToken } = require('@vercel/blob');
+const { handleUploadPresigned } = require('@vercel/blob/client');
 const { sendJson, verifySession, isSameOrigin } = require('../../lib/admin-auth');
 
 const MAX_VIDEO_BYTES = 500 * 1024 * 1024;
@@ -20,45 +21,54 @@ module.exports = async function handler(req, res) {
   const body = req.body && typeof req.body === 'object' ? req.body : {};
   const isBlobCompletionCallback = body.type === 'blob.upload-completed';
 
-  // Vercel Blob invokes the completion callback server-to-server. The SDK validates
-  // that callback; all browser token-generation requests still require the owner session.
+  // Vercel Blob calls this endpoint server-to-server after upload. handleUploadPresigned
+  // verifies that callback with BLOB_WEBHOOK_PUBLIC_KEY; browser URL requests still need owner auth.
   if (!isBlobCompletionCallback) {
     if (!verifySession(req)) return sendJson(res, 401, { ok: false, message: 'Sesi berakhir. Silakan login kembali.' });
     if (!isSameOrigin(req)) return sendJson(res, 403, { ok: false, message: 'Permintaan ditolak.' });
   }
 
   try {
-    if (!process.env.BLOB_READ_WRITE_TOKEN) {
-      throw new Error('BLOB_READ_WRITE_TOKEN belum tersedia. Buat Vercel Blob Store berakses Public dan hubungkan ke project EGYA DURIAN.');
-    }
-
-    const response = await handleUpload({
+    const response = await handleUploadPresigned({
       body,
       request: req,
-      onBeforeGenerateToken: async pathname => {
+      getSignedToken: async (pathname) => {
         if (!verifySession(req)) throw new Error('Sesi berakhir. Silakan login kembali.');
         if (!isSameOrigin(req)) throw new Error('Permintaan upload harus berasal dari halaman admin EGYA DURIAN.');
-        if (!process.env.BLOB_READ_WRITE_TOKEN) throw new Error('BLOB_READ_WRITE_TOKEN belum tersedia.');
         if (!isValidVideoPath(pathname)) throw new Error('Path video tidak valid. Gunakan video MP4, WebM, atau OGG.');
 
-        return {
+        // The Blob store is connected to this Vercel project through OIDC. handleUpload
+        // requires a static read-write token, so use the presigned flow for OIDC instead.
+        const token = await issueSignedToken({
+          pathname,
+          operations: ['put'],
           allowedContentTypes: ALLOWED_VIDEO_TYPES,
           maximumSizeInBytes: MAX_VIDEO_BYTES,
-          addRandomSuffix: true,
-          allowOverwrite: false,
-          tokenPayload: JSON.stringify({ feature: 'egyadurian-gallery-video' }),
+          validUntil: Date.now() + 15 * 60 * 1000,
+        });
+
+        return {
+          token,
+          urlOptions: {
+            access: 'public',
+            allowedContentTypes: ALLOWED_VIDEO_TYPES,
+            maximumSizeInBytes: MAX_VIDEO_BYTES,
+            addRandomSuffix: true,
+            allowOverwrite: false,
+            validUntil: Date.now() + 10 * 60 * 1000,
+            tokenPayload: JSON.stringify({ feature: 'egyadurian-gallery-video' }),
+          },
         };
       },
       onUploadCompleted: async ({ blob, tokenPayload }) => {
-        // The browser adds blob.url to the admin draft; the owner then presses
-        // “Simpan Perubahan” to commit the URL into index.html. No database update is needed here.
-        if (!blob || typeof blob.url !== 'string' || !String(tokenPayload || '').includes('egyadurian-gallery-video')) {
+        // The browser stages blob.url in the admin draft. The owner activates it only
+        // after pressing Save Changes, so the existing public video remains untouched until then.
+        if (!blob || typeof blob.url !== 'string' || !blob.url.startsWith('https://') || !String(tokenPayload || '').includes('egyadurian-gallery-video')) {
           throw new Error('Upload video galeri tidak dapat diverifikasi.');
         }
       },
     });
 
-    // Keep this response shape exactly as expected by @vercel/blob/client.
     return sendJson(res, 200, response);
   } catch (error) {
     const message = error && error.message ? error.message : 'Unggah video gagal.';

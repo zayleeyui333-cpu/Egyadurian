@@ -495,8 +495,8 @@
       if (!blobClientUploadPromise) {
         blobClientUploadPromise = import('https://esm.sh/@vercel/blob@2.8.1/client?bundle')
           .then(module => {
-            if (typeof module.upload !== 'function') throw new Error('Modul unggah video tidak tersedia.');
-            return module.upload;
+            if (typeof module.uploadPresigned !== 'function') throw new Error('Modul unggah video presigned tidak tersedia.');
+            return module.uploadPresigned;
           })
           .catch(error => {
             blobClientUploadPromise = null;
@@ -530,9 +530,9 @@ Video akan diunggah ke penyimpanan publik Vercel Blob. Video baru belum tampil d
           progress.className = 'video-upload-progress show';
         }
         showStatus($('#mainStatus'), 'Menyiapkan unggahan video ke penyimpanan…');
-        const upload = await getBlobClientUpload();
+        const uploadPresigned = await getBlobClientUpload();
         const pathname = `egyadurian-gallery-videos/${Date.now()}-${safeVideoFileName(file.name)}`;
-        const blob = await upload(pathname, file, {
+        const blob = await uploadPresigned(pathname, file, {
           access: 'public',
           contentType,
           handleUploadUrl: '/api/admin/video-upload',
@@ -561,11 +561,11 @@ Video akan diunggah ke penyimpanan publik Vercel Blob. Video baru belum tampil d
         const detail = error && error.message ? error.message : 'Unggah video gagal. Coba lagi.';
         if (progress) { progress.textContent = detail; progress.className = 'video-upload-progress show'; }
         showStatus($('#mainStatus'), detail, true);
-        const needsBlobSetupHelp = /BLOB_READ_WRITE_TOKEN|blob store|client token|access denied|vercel blob/i.test(detail);
+        const needsBlobSetupHelp = /blob store|signed token|presigned|access denied|vercel blob|oidc|webhook public key/i.test(detail);
         showPopup('Gagal mengunggah video', needsBlobSetupHelp
           ? `${detail}
 
-Pastikan Vercel Blob Store sudah dibuat sebagai Public dan terhubung ke project EGYA DURIAN, BLOB_READ_WRITE_TOKEN tersedia di Environment Variables, lalu deployment terbaru sudah Ready.`
+Pastikan Blob Store Public terhubung ke project EGYA DURIAN pada Storage → Projects, dan koneksi OIDC serta BLOB_WEBHOOK_PUBLIC_KEY tersedia untuk Production. Untuk alur OIDC ini, BLOB_READ_WRITE_TOKEN tidak diperlukan. Setelah memperbaiki koneksi, redeploy lalu coba lagi.`
           : detail, true);
       } finally {
         busy = false;
