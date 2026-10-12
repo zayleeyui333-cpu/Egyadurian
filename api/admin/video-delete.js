@@ -77,18 +77,19 @@ module.exports = async function handler(req, res) {
     const pendingUpload = body.pendingUpload === true && target.type === 'blob';
     const file = await getFile('index.html');
     const current = contentAdmin.getAdminData(file.content);
-    const isActive = current.galleryVideo === body.videoUrl;
-    const isArchived = current.galleryVideoArchive === body.videoUrl;
+    const currentVideos = Array.isArray(current.galleryVideos) ? current.galleryVideos : [];
+    const existingVideo = currentVideos.find(video => video.url === body.videoUrl);
+    const isPublishedReference = Boolean(existingVideo);
 
     // A newly uploaded draft can be removed before publishing it. A saved video
-    // must match the current active/archive reference in index.html.
-    if (!isActive && !isArchived && !pendingUpload) {
-      return sendJson(res, 409, { ok: false, message: 'Video tidak lagi tercatat sebagai video aktif atau arsip. Muat ulang halaman admin sebelum mencoba lagi.' });
+    // must match one specific entry in the multi-video list.
+    if (!isPublishedReference && !pendingUpload) {
+      return sendJson(res, 409, { ok: false, message: 'Video ini tidak lagi tercatat di daftar galeri. Muat ulang halaman admin sebelum mencoba lagi.' });
     }
 
     let updated = file.content;
-    if (isActive || isArchived) {
-      const galleryMatch = file.content.match(/<section\b(?=[^>]*\bid=["']gallery["'])[\s\S]*?<\/section>/i);
+    if (isPublishedReference) {
+      const galleryMatch = file.content.match(/<section\b(?=[^>]*\bid=["']gallery["'])[^]*?<\/section>/i);
       if (!galleryMatch) throw new Error('Bagian Galeri EGYA DURIAN tidak ditemukan di index.html.');
       const outsideGallery = file.content.replace(galleryMatch[0], '');
       if (outsideGallery.includes(body.videoUrl)) {
@@ -96,8 +97,7 @@ module.exports = async function handler(req, res) {
       }
       const nextData = {
         ...current,
-        galleryVideo: isActive ? '' : current.galleryVideo,
-        galleryVideoArchive: isArchived ? '' : current.galleryVideoArchive,
+        galleryVideos: currentVideos.filter(video => video.url !== body.videoUrl),
       };
       updated = contentAdmin.updateContent(file.content, nextData);
       hadPublishedReference = true;
@@ -107,7 +107,8 @@ module.exports = async function handler(req, res) {
     // races with another edit, the admin can repeat the delete action: del()
     // and the GitHub file deletion both tolerate an already-missing object.
     if (target.type === 'blob') {
-      if (!process.env.BLOB_READ_WRITE_TOKEN) throw new Error('BLOB_READ_WRITE_TOKEN belum tersedia di Vercel.');
+      // The Vercel Blob store is connected to this project through OIDC. With the
+      // current @vercel/blob SDK, del() uses the project's OIDC credentials.
       await del(target.url);
       storageDeleteCompleted = true;
     } else {
@@ -127,8 +128,8 @@ module.exports = async function handler(req, res) {
     const message = pendingUpload && !hadPublishedReference
       ? 'Video draf berhasil dihapus permanen dari Vercel Blob. Video yang sedang diterbitkan di website tidak diubah.'
       : (target.type === 'blob'
-        ? 'Video dihapus permanen dari Vercel Blob dan referensinya dihapus dari Galeri EGYA DURIAN. Penghapusan CDN dapat membutuhkan waktu hingga sekitar satu menit.'
-        : 'File video dihapus dari versi aktif repository GitHub dan referensinya dihapus dari Galeri EGYA DURIAN. GitHub tetap menyimpan riwayat commit lama.');
+        ? 'Video yang dipilih dihapus permanen dari Vercel Blob dan hanya referensinya yang dilepas dari galeri. Video lain tidak berubah. Penghapusan CDN dapat membutuhkan waktu hingga sekitar satu menit.'
+        : 'Video yang dipilih dihapus dari versi aktif repository GitHub dan hanya referensinya yang dilepas dari galeri. Video lain tidak berubah. GitHub tetap menyimpan riwayat commit lama.');
     return sendJson(res, 200, { ok: true, message });
   } catch (error) {
     const message = storageDeleteCompleted && hadPublishedReference

@@ -206,9 +206,10 @@ function getAdminData(html) {
   const productsSection = getRegion(html, /<section\b(?=[^>]*\bid=["']products["'])[\s\S]*?<\/section>/i, 'products').text;
   const gallerySection = getRegion(html, /<section\b(?=[^>]*\bid=["']gallery["'])[\s\S]*?<\/section>/i, 'gallery website').text;
   const gallery = extractGalleryImages(gallerySection);
-  const galleryVideoInfo = extractGalleryVideoInfo(gallerySection);
-  const galleryVideo = galleryVideoInfo.active;
-  const galleryVideoArchive = galleryVideoInfo.archived;
+  const galleryVideos = extractGalleryVideos(gallerySection);
+  // Compatibility fields for older admin tabs; the current admin uses galleryVideos.
+  const galleryVideo = galleryVideos.find(video => !video.hidden)?.url || '';
+  const galleryVideoArchive = galleryVideos.find(video => video.hidden)?.url || '';
 
   const phoneParagraph = (contact.match(/<p\b[^>]*>\s*📞[\s\S]*?<\/p>/i) || [''])[0];
   const phones = (plainText(phoneParagraph).match(/\+?\d[\d ()-]{6,}\d/g) || []).map(value => value.trim());
@@ -249,6 +250,7 @@ function getAdminData(html) {
     products,
     testimonials,
     gallery,
+    galleryVideos,
     galleryVideo,
     galleryVideoArchive,
   };
@@ -264,14 +266,34 @@ function extractGalleryImages(gallerySection) {
   }
   return images;
 }
-function extractGalleryVideoInfo(gallerySection) {
+function extractGalleryVideos(gallerySection) {
   const grid = findElementByClass(gallerySection, 'div', 'gallery-grid');
   if (!grid) throw new Error('Daftar media pada Galeri EGYA DURIAN tidak ditemukan.');
   const sectionOpen = (gallerySection.match(/<section\b[^>]*>/i) || [''])[0];
-  // New format stores the hidden video's URL as section metadata, not as a
-  // hidden <video> element in the public gallery. This prevents an empty player
-  // from still taking up space on the customer-facing page.
-  const result = { active: '', archived: getAttribute(sectionOpen, 'data-admin-gallery-video-archive').trim() };
+  const result = [];
+  const add = (url, hidden) => {
+    const cleanUrl = String(url || '').trim();
+    if (!cleanUrl) return;
+    const exists = result.find(video => video.url === cleanUrl);
+    if (exists) return;
+    result.push({ url: cleanUrl, hidden: Boolean(hidden) });
+  };
+
+  // v9 stores all videos and each video's visibility in section metadata.
+  const rawMetadata = getAttribute(sectionOpen, 'data-admin-gallery-videos').trim();
+  if (rawMetadata) {
+    try {
+      const parsed = JSON.parse(rawMetadata);
+      if (Array.isArray(parsed)) {
+        for (const video of parsed) {
+          if (video && typeof video.url === 'string') add(video.url, video.hidden === true);
+        }
+      }
+    } catch { /* Migrate old markup below. */ }
+  }
+
+  // Active videos appear in the public gallery-grid. Legacy hidden video tags are
+  // read for migration but will be removed on the next save.
   for (const videoMatch of grid.inner.matchAll(/<video\b[^>]*>[\s\S]*?<\/video>/gi)) {
     const whole = videoMatch[0];
     const videoOpen = (whole.match(/^<video\b[^>]*>/i) || [''])[0];
@@ -279,10 +301,18 @@ function extractGalleryVideoInfo(gallerySection) {
     const src = (sourceMatch ? getAttribute(sourceMatch[0], 'src') : getAttribute(videoOpen, 'src')).trim();
     if (!src) continue;
     const classes = classTokens(videoOpen);
-    const archived = getAttribute(videoOpen, 'data-admin-gallery-hidden') === 'true' || /\bhidden(?:\s|=|>)/i.test(videoOpen) || classes.includes('gallery-video-archived');
-    if (archived && !result.archived) result.archived = src; // Backward compatibility for old v5/v6 markup.
-    else if (!archived && classes.includes('gallery-item') && !result.active) result.active = src;
+    const hidden = getAttribute(videoOpen, 'data-admin-gallery-hidden') === 'true'
+      || /\bhidden(?:\s|=|>)/i.test(videoOpen)
+      || classes.includes('gallery-video-archived');
+    add(src, hidden);
   }
+
+  // Backwards compatibility with v5-v8 where only one archive URL was stored.
+  const legacyArchive = getAttribute(sectionOpen, 'data-admin-gallery-video-archive').trim();
+  if (legacyArchive) add(legacyArchive, true);
+
+  // Metadata is authoritative for known URLs; any unlisted video tag discovered
+  // above is retained so an external/manual HTML addition is not silently lost.
   return result;
 }
 function removeAttribute(openTag, name) {
@@ -297,11 +327,12 @@ function videoMimeForPath(videoPath) {
 }
 function updateVideoMarkup(template, videoPath) {
   const mime = videoMimeForPath(videoPath);
-  let markup = template || `<video class="gallery-item" playsinline preload="metadata" muted><source src="${htmlEscape(videoPath)}" type="${mime}">Browser Anda tidak mendukung video.</video>`;
+  let markup = template || `<video class="gallery-item" controls playsinline preload="metadata" muted><source src="${htmlEscape(videoPath)}" type="${mime}">Browser Anda tidak mendukung video.</video>`;
   const videoOpen = (markup.match(/^<video\b[^>]*>/i) || [''])[0];
   if (!videoOpen) throw new Error('Elemen video Galeri EGYA DURIAN tidak valid.');
   let nextOpen = setAttribute(videoOpen, 'class', 'gallery-item');
   nextOpen = removeAttribute(removeAttribute(nextOpen, 'hidden'), 'data-admin-gallery-hidden');
+  if (!/\bcontrols(?:\s|=|>)/i.test(nextOpen)) nextOpen = nextOpen.replace(/>$/, ' controls>');
   markup = markup.replace(videoOpen, nextOpen);
   const sourcePattern = /<source\b[^>]*>/i;
   if (sourcePattern.test(markup)) {
@@ -311,49 +342,73 @@ function updateVideoMarkup(template, videoPath) {
   }
   return markup;
 }
-function galleryVideoMarkupNeedsNormalization(section, activeVideoPath, archivedVideoPath) {
+function videoUrlFromMarkup(markup) {
+  const videoOpen = (markup.match(/^<video\b[^>]*>/i) || [''])[0];
+  const sourceMatch = markup.match(/<source\b[^>]*>/i);
+  return (sourceMatch ? getAttribute(sourceMatch[0], 'src') : getAttribute(videoOpen, 'src')).trim();
+}
+function sameGalleryVideoLists(left, right) {
+  if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) return false;
+  return left.every((video, index) => video.url === right[index]?.url && video.hidden === right[index]?.hidden);
+}
+function galleryVideoMarkupNeedsNormalization(section, galleryVideos) {
   const grid = findElementByClass(section, 'div', 'gallery-grid');
   if (!grid) throw new Error('Daftar media pada Galeri EGYA DURIAN tidak ditemukan.');
-  const videos = [...grid.inner.matchAll(/<video\b[^>]*>[\s\S]*?<\/video>/gi)].map(match => match[0]);
-  const hiddenVideoExists = videos.some(markup => {
+  const videoMarkup = [...grid.inner.matchAll(/<video\b[^>]*>[\s\S]*?<\/video>/gi)].map(match => match[0]);
+  const actualActive = videoMarkup.filter(markup => {
     const open = (markup.match(/^<video\b[^>]*>/i) || [''])[0];
-    return getAttribute(open, 'data-admin-gallery-hidden') === 'true' || /\bhidden(?:\s|=|>)/i.test(open) || classTokens(open).includes('gallery-video-archived');
-  });
-  const activeVideos = videos.filter(markup => {
-    const open = (markup.match(/^<video\b[^>]*>/i) || [''])[0];
-    const hidden = getAttribute(open, 'data-admin-gallery-hidden') === 'true' || /\bhidden(?:\s|=|>)/i.test(open) || classTokens(open).includes('gallery-video-archived');
+    const hidden = getAttribute(open, 'data-admin-gallery-hidden') === 'true'
+      || /\bhidden(?:\s|=|>)/i.test(open)
+      || classTokens(open).includes('gallery-video-archived');
     return !hidden && classTokens(open).includes('gallery-item');
-  });
+  }).map(videoUrlFromMarkup).filter(Boolean);
+  const expectedActive = galleryVideos.filter(video => !video.hidden).map(video => video.url);
   const sectionOpen = (section.match(/<section\b[^>]*>/i) || [''])[0];
-  const savedArchive = getAttribute(sectionOpen, 'data-admin-gallery-video-archive').trim();
-  return hiddenVideoExists || activeVideos.length !== (activeVideoPath ? 1 : 0) || savedArchive !== (archivedVideoPath || '');
+  const rawMetadata = getAttribute(sectionOpen, 'data-admin-gallery-videos').trim();
+  const legacyArchive = getAttribute(sectionOpen, 'data-admin-gallery-video-archive').trim();
+  let stored = null;
+  try {
+    const parsed = JSON.parse(rawMetadata);
+    if (Array.isArray(parsed)) stored = parsed.filter(video => video && typeof video.url === 'string').map(video => ({ url: video.url, hidden: video.hidden === true }));
+  } catch { /* Old data needs one-time normalization. */ }
+  const hasHiddenVideoTag = videoMarkup.some(markup => {
+    const open = (markup.match(/^<video\b[^>]*>/i) || [''])[0];
+    return getAttribute(open, 'data-admin-gallery-hidden') === 'true'
+      || /\bhidden(?:\s|=|>)/i.test(open)
+      || classTokens(open).includes('gallery-video-archived');
+  });
+  return Boolean(legacyArchive)
+    || hasHiddenVideoTag
+    || !stored
+    || !sameGalleryVideoLists(stored, galleryVideos)
+    || actualActive.length !== expectedActive.length
+    || actualActive.some((url, index) => url !== expectedActive[index]);
 }
-function updateGalleryVideoSection(section, activeVideoPath, archivedVideoPath) {
+function updateGalleryVideoSection(section, galleryVideos) {
   const grid = findElementByClass(section, 'div', 'gallery-grid');
   if (!grid) throw new Error('Daftar media pada Galeri EGYA DURIAN tidak ditemukan.');
   const videoPattern = /<video\b[^>]*>[\s\S]*?<\/video>/gi;
   const existingVideos = [...grid.inner.matchAll(videoPattern)].map(match => match[0]);
-  const details = existingVideos.map(markup => {
+  const templateMarkup = existingVideos.find(markup => {
     const open = (markup.match(/^<video\b[^>]*>/i) || [''])[0];
-    const classes = classTokens(open);
-    const hidden = getAttribute(open, 'data-admin-gallery-hidden') === 'true' || /\bhidden(?:\s|=|>)/i.test(open) || classes.includes('gallery-video-archived');
-    return { markup, hidden };
-  });
-  const activeTemplate = details.find(video => !video.hidden) || details[0] || null;
-  const pieces = [];
-  // Only an active video element is rendered inside the public gallery grid.
-  // A hidden/archived URL is metadata on the section, never a dormant player.
-  if (activeVideoPath) pieces.push(updateVideoMarkup(activeTemplate ? activeTemplate.markup : '', activeVideoPath));
+    return !getAttribute(open, 'data-admin-gallery-hidden')
+      && !/\bhidden(?:\s|=|>)/i.test(open)
+      && !classTokens(open).includes('gallery-video-archived');
+  }) || existingVideos[0] || '';
+  const activeMarkup = galleryVideos.filter(video => !video.hidden)
+    .map(video => updateVideoMarkup(templateMarkup, video.url));
+
+  // Only visible video elements are put into the public gallery. Hidden videos
+  // live only in the metadata, so they do not leave empty player tiles behind.
   let nextInner = grid.inner.replace(videoPattern, '').trimEnd();
-  if (pieces.length) nextInner = `${nextInner}${nextInner ? '\n\n' : ''}${pieces.join('\n\n')}`;
+  if (activeMarkup.length) nextInner = `${nextInner}${nextInner ? '\n\n' : ''}${activeMarkup.join('\n\n')}`;
   const innerStart = grid.start + grid.openTag.length;
   const innerEnd = grid.end - grid.closeTag.length;
   let updated = section.slice(0, innerStart) + nextInner + section.slice(innerEnd);
   const sectionOpen = (updated.match(/<section\b[^>]*>/i) || [''])[0];
   if (!sectionOpen) throw new Error('Pembuka bagian Galeri EGYA DURIAN tidak ditemukan.');
-  const nextSectionOpen = archivedVideoPath
-    ? setAttribute(sectionOpen, 'data-admin-gallery-video-archive', archivedVideoPath)
-    : removeAttribute(sectionOpen, 'data-admin-gallery-video-archive');
+  let nextSectionOpen = removeAttribute(sectionOpen, 'data-admin-gallery-video-archive');
+  nextSectionOpen = setAttribute(nextSectionOpen, 'data-admin-gallery-videos', JSON.stringify(galleryVideos));
   updated = updated.replace(sectionOpen, nextSectionOpen);
   return updated;
 }
@@ -541,13 +596,12 @@ function updateContent(html, submitted) {
     const block = updateGallerySection(region.text, input.gallery);
     updated = updated.slice(0, region.start) + block + updated.slice(region.end);
   }
-  if (input.galleryVideo !== null && input.galleryVideoArchive !== null) {
+  if (input.galleryVideos !== null) {
     const region = getRegion(updated, /<section\b(?=[^>]*\bid=["']gallery["'])[\s\S]*?<\/section>/i, 'gallery website');
-    const videoValuesChanged = input.galleryVideo !== current.galleryVideo || input.galleryVideoArchive !== current.galleryVideoArchive;
-    // Also migrate old v5/v6 HTML that placed an archived <video hidden> inside
-    // the public grid. Save once after upgrading and the dead player is removed.
-    if (videoValuesChanged || galleryVideoMarkupNeedsNormalization(region.text, input.galleryVideo, input.galleryVideoArchive)) {
-      const block = updateGalleryVideoSection(region.text, input.galleryVideo, input.galleryVideoArchive);
+    const videoValuesChanged = !sameGalleryVideoLists(input.galleryVideos, current.galleryVideos);
+    // Migrate old v5-v8 single-video metadata and normalize old hidden players once.
+    if (videoValuesChanged || galleryVideoMarkupNeedsNormalization(region.text, input.galleryVideos)) {
+      const block = updateGalleryVideoSection(region.text, input.galleryVideos);
       updated = updated.slice(0, region.start) + block + updated.slice(region.end);
     }
   }
@@ -603,9 +657,24 @@ function validatePayload(value) {
     if (!isAssetPath && !isPublicBlobUrl) throw new Error(`Path ${label} tidak valid. Gunakan file assets yang ada atau video dari Vercel Blob. `);
     return input;
   };
+  let galleryVideos = null;
+  if (Array.isArray(value.galleryVideos)) {
+    if (value.galleryVideos.length > 30) throw new Error('Galeri website dapat menampilkan maksimal 30 video.');
+    const seenVideoUrls = new Set();
+    galleryVideos = value.galleryVideos.map((video, index) => {
+      if (!video || typeof video !== 'object') throw new Error(`Data video galeri nomor ${index + 1} tidak valid.`);
+      const url = validateVideoPath(video.url, `video Galeri website nomor ${index + 1}`);
+      if (!url) throw new Error(`Alamat video galeri nomor ${index + 1} wajib diisi.`);
+      if (seenVideoUrls.has(url)) throw new Error('Ada video duplikat di galeri. Muat ulang data lalu coba lagi.');
+      seenVideoUrls.add(url);
+      if (typeof video.hidden !== 'boolean') throw new Error(`Status video nomor ${index + 1} tidak valid.`);
+      return { url, hidden: video.hidden };
+    });
+  }
+  // These compatibility fields are still returned to old admin tabs, but v9
+  // only updates videos when galleryVideos[] is included in the request.
   const galleryVideo = validateVideoPath(value.galleryVideo, 'video Galeri website');
   const galleryVideoArchive = validateVideoPath(value.galleryVideoArchive, 'video arsip Galeri website');
-  if (galleryVideo && galleryVideoArchive && galleryVideo === galleryVideoArchive) throw new Error('Video aktif dan video arsip tidak boleh menunjuk ke file yang sama.');
   const seenIds = new Set();
   const products = value.products.map((product, index) => {
     if (!product || typeof product.id !== 'string' || !/^[a-z0-9_-]{1,64}$/i.test(product.id)) throw new Error(`ID produk ${index + 1} tidak valid.`);
@@ -652,6 +721,7 @@ function validatePayload(value) {
       name: text(item?.name, `Nama testimoni ${index + 1}`, 80),
     })),
     gallery,
+    galleryVideos,
     galleryVideo,
     galleryVideoArchive,
   };
