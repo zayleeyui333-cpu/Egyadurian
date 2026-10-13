@@ -242,17 +242,31 @@ function getSocialUrl(html, platform) {
     facebook: /\bfa-facebook(?:-f)?\b/i,
     instagram: /\bfa-instagram\b/i,
     tiktok: /\bfa-tiktok\b/i,
+    whatsapp: /\bfa-whatsapp\b/i,
   }[platform];
   if (!iconPattern) return '';
-  for (const className of ['hero-social', 'footer-social']) {
-    const region = findElementByClass(html, 'div', className);
-    if (!region) continue;
-    for (const anchor of region.inner.matchAll(/<a\b[^>]*>[\s\S]*?<\/a>/gi)) {
-      const icon = (anchor[0].match(/<(?:i|img)\b[^>]*>/i) || [''])[0];
-      if (iconPattern.test(getAttribute(icon, 'class')) || getAttribute(icon, 'data-social-platform').toLowerCase() === platform) {
-        const url = getAttribute((anchor[0].match(/^<a\b[^>]*>/i) || [''])[0], 'href');
-        if (url && url !== '#') return url;
+  // Scan all matching regions. The footer uses the legacy class `footer-social`
+  // for both its menu column and its actual social column.
+  const regionClasses = ['hero-social', 'footer-social'];
+  for (const className of regionClasses) {
+    const regions = className === 'hero-social' ? [findElementByClass(html, 'div', className)].filter(Boolean) : extractAllDivsByClass(html, className);
+    for (const region of regions) {
+      for (const anchor of region.inner.matchAll(/<a\b[^>]*>[\s\S]*?<\/a>/gi)) {
+        const opening = (anchor[0].match(/^<a\b[^>]*>/i) || [''])[0];
+        const icon = (anchor[0].match(/<(?:i|img)\b[^>]*>/i) || [''])[0];
+        const href = getAttribute(opening, 'href');
+        const platformMatch = iconPattern.test(getAttribute(icon, 'class')) || getAttribute(icon, 'data-social-platform').toLowerCase() === platform || (platform === 'whatsapp' && /(?:wa\.me\/|api\.whatsapp\.com\/)/i.test(href));
+        if (platformMatch && href && href !== '#') return href;
       }
+    }
+  }
+  // The floating WhatsApp control remains a source of truth if the hero link
+  // was removed by an older edit.
+  if (platform === 'whatsapp') {
+    const floating = findElementByClass(html, 'a', 'floating-wa');
+    if (floating) {
+      const href = getAttribute(floating.openTag, 'href');
+      if (href && href !== '#') return href;
     }
   }
   return '';
@@ -442,6 +456,7 @@ function getAdminData(html) {
     galleryVideos,
     galleryVideo,
     galleryVideoArchive,
+    whatsappUrl: getSocialUrl(html, 'whatsapp') || '',
     siteSettings: extractSiteSettings(html),
   };
 }
@@ -814,18 +829,74 @@ function updateFaqSection(html, settings) {
   const next = `${region.openTag}\n\n<h2>\n\n${htmlEscape(settings.faqTitle)}\n\n</h2>\n\n${questions}\n\n${region.closeTag}`;
   return html.slice(0, region.start) + next + html.slice(region.end);
 }
+function isWhatsAppAnchor(anchor) {
+  const opening = (anchor.match(/^<a\b[^>]*>/i) || [''])[0];
+  const icon = (anchor.match(/<(?:i|img)\b[^>]*>/i) || [''])[0];
+  return /(?:wa\.me\/|api\.whatsapp\.com\/)/i.test(getAttribute(opening, 'href'))
+    || /\bfa-whatsapp\b/i.test(getAttribute(icon, 'class'))
+    || getAttribute(icon, 'data-social-platform').toLowerCase() === 'whatsapp';
+}
+function normalizeWhatsAppAnchor(anchor, url) {
+  const opening = (anchor.match(/^<a\b[^>]*>/i) || [''])[0];
+  let next = setAttribute(opening, 'href', url);
+  next = removeAttribute(next, 'hidden');
+  next = setAttribute(next, 'target', '_blank');
+  next = setAttribute(next, 'rel', 'noopener noreferrer');
+  return next + anchor.slice(opening.length);
+}
+function makeWhatsAppAnchor(url, customIconPath = '') {
+  const icon = customIconPath
+    ? `<img src="${htmlEscape(customIconPath)}" alt="WhatsApp" data-social-platform="whatsapp" class="social-custom-icon" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:6px">`
+    : '<i class="fa-brands fa-whatsapp"></i>';
+  return `<a href="${htmlEscape(url)}" target="_blank" rel="noopener noreferrer">${icon}\nWhatsApp\n</a>`;
+}
+function ensureWhatsAppAnchorInRegion(regionText, url, customIconPath = '') {
+  let hasWhatsApp = false;
+  const normalized = regionText.replace(/<a\b[^>]*>[\s\S]*?<\/a>/gi, anchor => {
+    if (!isWhatsAppAnchor(anchor)) return anchor;
+    hasWhatsApp = true;
+    return normalizeWhatsAppAnchor(anchor, url);
+  });
+  if (hasWhatsApp) return normalized;
+  const closeIndex = normalized.toLowerCase().lastIndexOf('</div>');
+  if (closeIndex < 0) return normalized;
+  return normalized.slice(0, closeIndex) + '\n' + makeWhatsAppAnchor(url, customIconPath) + '\n' + normalized.slice(closeIndex);
+}
+function updateWhatsAppSocialRegions(html, url, customIconPath = '') {
+  let updated = html;
+  const hero = findElementByClass(updated, 'div', 'hero-social');
+  if (hero) {
+    const next = ensureWhatsAppAnchorInRegion(hero.text, url, customIconPath);
+    updated = updated.slice(0, hero.start) + next + updated.slice(hero.end);
+  }
+  const footerRegions = extractAllDivsByClass(updated, 'footer-social');
+  for (const region of footerRegions.reverse()) {
+    // Ignore the legacy footer menu column, which shares the same CSS class.
+    if (!/(?:fa-facebook|fa-instagram|fa-tiktok|fa-whatsapp|data-social-platform=["'](?:facebook|instagram|tiktok|whatsapp)["'])/i.test(region.text)) continue;
+    const next = ensureWhatsAppAnchorInRegion(region.text, url, customIconPath);
+    updated = updated.slice(0, region.start) + next + updated.slice(region.end);
+  }
+  return updated;
+}
 function updateWhatsAppLinks(html, phone) {
   const digits = String(phone || '').replace(/\D/g, '');
-  if (digits.length < 7) return html;
-  let updated = html.replace(/<a\b[^>]*>[\s\S]*?<\/a>/gi, anchor => {
+  if (digits.length < 7 || digits.length > 15) return html;
+  let updated = html;
+  const candidates = ['hero-social', 'footer-social', 'floating-wa'];
+  // First normalize any existing links throughout the file, including custom image icons.
+  updated = updated.replace(/<a\b[^>]*>[\s\S]*?<\/a>/gi, anchor => {
+    if (!isWhatsAppAnchor(anchor)) return anchor;
     const opening = (anchor.match(/^<a\b[^>]*>/i) || [''])[0];
-    const icon = (anchor.match(/<i\b[^>]*>/i) || [''])[0];
-    const isWhatsApp = /wa\.me\//i.test(getAttribute(opening, 'href')) || /\bfa-whatsapp\b/i.test(getAttribute(icon, 'class'));
-    if (!isWhatsApp) return anchor;
     const floating = classTokens(opening).includes('floating-wa');
     const url = `https://wa.me/${digits}${floating ? '?text=Halo%20EGYA%20DURIAN' : ''}`;
-    return setAttribute(opening, 'href', url) + anchor.slice(opening.length);
+    return normalizeWhatsAppAnchor(anchor, url);
   });
+  // Repair old HTML snapshots that may have lost the hero/footer WhatsApp anchor.
+  const socialUrl = `https://wa.me/${digits}`;
+  const customIconPath = getCustomSocialIconPath(updated, 'whatsapp');
+  updated = updateWhatsAppSocialRegions(updated, socialUrl, customIconPath);
+  // The checkout script reads this data attribute. Keep it synchronized with the
+  // same number that appears in contact, the hero, footer, and floating WhatsApp.
   const bodyOpen = (updated.match(/<body\b[^>]*>/i) || [''])[0];
   if (bodyOpen) updated = updated.replace(bodyOpen, setAttribute(bodyOpen, 'data-admin-whatsapp-number', digits));
   return updated;

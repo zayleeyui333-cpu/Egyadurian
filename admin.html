@@ -75,6 +75,49 @@
     .video-upload-progress.show{display:block}
     @media(max-width:650px){.site-gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.gallery-upload-row{align-items:stretch;flex-direction:column}.gallery-upload-row .field{min-width:0}.site-gallery-video-list{grid-template-columns:1fr}.site-gallery-video-panel{max-width:none}.site-gallery-video-upload{padding:11px}}
 
+
+    /* v11 visual refresh: clearer green/gold hierarchy and section finder; editor behavior stays unchanged. */
+    :root{--green:#153d2a;--green2:#26724a;--gold:#dcb45a;--paper:#f3f6f2;--line:#dfe7df;--ink:#17251d;--muted:#64736a}
+    body{background:radial-gradient(circle at 3% 0%,#e4eee4 0,transparent 30%),var(--paper)}
+    .shell{max-width:1240px;padding-top:22px}
+    .brand{background:linear-gradient(115deg,#123522,#245a39);border:1px solid #2c6844;box-shadow:0 12px 30px #153d2a18}
+    .brand-mark{background:linear-gradient(145deg,#fff,#f0e5c8);color:#153d2a;box-shadow:inset 0 0 0 1px #d9c68f}
+    .panel-intro{padding:20px 4px 6px}
+    .panel-intro h2{font-size:clamp(22px,3vw,28px);letter-spacing:-.025em;color:#173d27}
+    .section-card{border-radius:18px;border-color:#dfe7df;box-shadow:0 8px 24px #173d2708;padding:clamp(15px,2.4vw,23px);scroll-margin-top:185px;transition:border-color .18s,box-shadow .18s,transform .18s}
+    .section-card.admin-section-focus{border-color:#c99b36;box-shadow:0 0 0 3px #e6c46b45,0 12px 30px #173d2710}
+    .section-heading{padding-bottom:12px;border-bottom:1px solid #edf1ec;margin-bottom:18px}
+    .section-heading h2{font-size:clamp(17px,2vw,20px);letter-spacing:-.015em;color:#183e2b}
+    .section-label{display:inline-flex;align-items:center;background:#eaf2e8;color:#27613d;padding:5px 8px;border-radius:6px;font-size:10px;letter-spacing:.09em;margin-bottom:9px}
+    .site-setting-subtitle{margin-top:22px;padding-left:10px;border-left:3px solid #dcb45a;font-size:14px;color:#244f34}
+    .field label{line-height:1.3}
+    .field input,.field textarea,.field select{border-color:#d5dfd5;border-radius:11px;padding:11px 12px;transition:border-color .15s,box-shadow .15s}
+    .field input:focus,.field textarea:focus,.field select:focus{border-color:#41875a;box-shadow:0 0 0 3px #41875a1c}
+    .primary{background:linear-gradient(135deg,#17452d,#2c7047);box-shadow:0 3px 9px #173d271c}
+    .primary:hover{background:linear-gradient(135deg,#123923,#245c3b)}
+    .secondary{background:#f2f6f0;border-color:#d6e2d4}
+    .danger{background:#fff3f0;border-color:#f1d2cd}
+    .editor-tools{position:sticky;top:8px;z-index:80;background:#fbfdf9f2;border:1px solid #dce6db;border-radius:18px;padding:15px;margin:14px 0 17px;box-shadow:0 10px 26px #143a220f;backdrop-filter:blur(14px)}
+    .editor-tools-heading{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,370px);gap:18px;align-items:center}
+    .editor-tools-eyebrow{display:inline-block;color:#96701a;font-size:10px;letter-spacing:.13em;font-weight:850;margin-bottom:5px}
+    .editor-tools-heading h2{font-size:17px;margin:0;color:#173d27}
+    .editor-tools-heading p{font-size:12px;color:#6a756c;margin:4px 0 0}
+    .editor-search-field{display:flex;flex-direction:column;gap:5px}
+    .editor-search-field label{font-size:11px;font-weight:800;color:#425246}
+    .editor-search-field input{width:100%;border:1px solid #d4dfd3;background:#fff;border-radius:11px;padding:10px 12px;color:#17251d;outline:none}
+    .editor-search-field input:focus{border-color:#3f7c51;box-shadow:0 0 0 3px #3f7c5119}
+    .editor-search-field small{font-size:10px;color:#778378}
+    .editor-quick-nav{display:flex;gap:7px;overflow-x:auto;padding:12px 1px 2px;scrollbar-width:thin}
+    .editor-nav-chip{display:flex;flex-direction:column;align-items:flex-start;gap:2px;flex:0 0 auto;max-width:205px;background:#f1f6ef;color:#173d27;border:1px solid #dbe6d9;border-radius:11px;padding:8px 11px}
+    .editor-nav-chip span{font-size:11px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+    .editor-nav-chip small{font-size:9px;color:#708170;font-weight:650;white-space:nowrap}
+    .editor-nav-chip:hover{background:#e4f0e1;border-color:#bbd3b8}
+    .editor-nav-empty{font-size:12px;color:#6c786d;padding:7px}
+    .editor-field-help{font-size:12px;line-height:1.5;background:#eef6eb;color:#426448;border-left:3px solid #dcb45a;border-radius:8px;padding:10px 12px;margin:0}
+    .bottom-save{border-color:#d9e5d7;box-shadow:0 8px 28px #0b291319}
+    .bottom-save button{min-width:175px}
+    @media(max-width:760px){.editor-tools{top:4px;padding:12px;border-radius:14px}.editor-tools-heading{grid-template-columns:1fr;gap:10px}.editor-nav-chip{max-width:175px}.editor-nav-chip span{max-width:150px}.section-card{scroll-margin-top:260px}}
+    @media(max-width:480px){.editor-tools-heading h2{font-size:16px}.bottom-save{align-items:stretch;flex-direction:column}.bottom-save span{max-width:none}.bottom-save button{width:100%}}
   </style>
 </head>
 <body>
@@ -111,6 +154,21 @@
         </div>
       </div>
       <div class="status" id="mainStatus" role="status" aria-live="polite"></div>
+      <section class="editor-tools" id="editorTools" aria-label="Navigasi pengaturan admin">
+        <div class="editor-tools-heading">
+          <div>
+            <span class="editor-tools-eyebrow">PANEL PENGATURAN</span>
+            <h2>Cari pengaturan website</h2>
+            <p>Gunakan pencarian atau klik bagian di bawah untuk langsung menuju bagian yang ingin diubah.</p>
+          </div>
+          <div class="editor-search-field">
+            <label for="editorSectionSearch">Cari bagian atau kata kunci</label>
+            <input id="editorSectionSearch" type="search" autocomplete="off" placeholder="Contoh: WhatsApp, logo, banner, harga…">
+            <small id="editorSectionCount" aria-live="polite">Memuat daftar bagian…</small>
+          </div>
+        </div>
+        <nav class="editor-quick-nav" id="editorQuickNav" aria-label="Daftar bagian pengaturan"></nav>
+      </section>
       <div id="editor"><div class="section-card">Memuat data website…</div></div>
       <div class="bottom-save">
         <span>Perubahan akan membuat commit baru dan memicu deployment otomatis.</span>
@@ -212,8 +270,39 @@
         <span class="upload-note">JPG/PNG/WebP · maksimal 2 MB</span>
       </article>`;
     }
-    function renderSiteSettings(s) {
+    function normalizeWhatsAppDigits(input) {
+      const raw = String(input || '').trim();
+      const match = raw.match(/(?:wa\.me\/|api\.whatsapp\.com\/send\?phone=)(\+?\d{7,15})/i);
+      const digits = (match ? match[1] : raw).replace(/\D/g, '');
+      return digits.length >= 7 && digits.length <= 15 ? digits : '';
+    }
+    function whatsappUrlFromNumber(input) {
+      const digits = normalizeWhatsAppDigits(input);
+      return digits ? `https://wa.me/${digits}` : '';
+    }
+    function bindWhatsAppSettingsControls() {
+      const linkInput = $('#site-whatsapp-url');
+      const phoneInput = $('#contact-phone-wa');
+      if (!linkInput || !phoneInput || linkInput.dataset.bound === 'true') return;
+      linkInput.dataset.bound = 'true';
+      linkInput.addEventListener('change', () => {
+        const digits = normalizeWhatsAppDigits(linkInput.value);
+        if (!digits) {
+          showPopup('Link WhatsApp belum valid', 'Masukkan tautan https://wa.me/nomor atau nomor WhatsApp internasional (7–15 digit).', true);
+          linkInput.value = whatsappUrlFromNumber(phoneInput.value);
+          return;
+        }
+        phoneInput.value = `+${digits}`;
+        linkInput.value = `https://wa.me/${digits}`;
+      });
+      phoneInput.addEventListener('input', () => {
+        const link = whatsappUrlFromNumber(phoneInput.value);
+        if (link) linkInput.value = link;
+      });
+    }
+    function renderSiteSettings(s, waUrl = '') {
       s = s || {};
+      waUrl = whatsappUrlFromNumber(waUrl) || whatsappUrlFromNumber(latestData?.contact?.phoneWhatsapp || '');
       const navItems = [['home','Home'],['products','Produk'],['about','Tentang'],['gallery','Galeri'],['testimonials','Testimoni'],['contact','Kontak']];
       const footerItems = [['home','Home'],['products','Produk'],['about','Tentang'],['gallery','Galeri'],['contact','Kontak']];
       const filterItems = [['all','Semua'],['musang','Musang King'],['blackthorn','Black Thorn'],['monthong','Monthong'],['kupas','Durian Kupas'],['pancake','Pancake Durian'],['pancakeroll','Pancake Rolls'],['lainnya','Lainnya']];
@@ -249,10 +338,12 @@
           <div class="form-grid">
             ${field('Nama brand', 'site-brand-name', s.brandName || '')}
             ${field('Tagline brand', 'site-brand-tagline', s.brandTagline || '')}
-            ${field('Tautan Facebook', 'site-facebook-url', s.facebookUrl || '', 'text', 'full')}
-            ${field('Tautan Instagram', 'site-instagram-url', s.instagramUrl || '', 'text', 'full')}
-            ${field('Tautan TikTok', 'site-tiktok-url', s.tiktokUrl || '', 'text', 'full')}
-          </div><p class="notice">Kosongkan tautan media sosial jika ingin menyembunyikan tautan tersebut. Ikon Facebook/Instagram/TikTok tetap memakai ikon platform, sedangkan URL-nya akan mengikuti isian ini.</p>
+            ${field('Link WhatsApp (Hero, Footer, tombol mengambang & Checkout)', 'site-whatsapp-url', waUrl, 'url', 'full', 'placeholder="https://wa.me/6281378874840" autocomplete="url"')}
+            <p class="editor-field-help full">WhatsApp pada hero dan footer akan dipulihkan bila hilang. Nomor dari link ini disinkronkan ke kolom Nomor WhatsApp di Kontak toko, tombol WhatsApp mengambang, formulir kontak, dan checkout.</p>
+            ${field('Tautan Facebook', 'site-facebook-url', s.facebookUrl || '', 'url', 'full')}
+            ${field('Tautan Instagram', 'site-instagram-url', s.instagramUrl || '', 'url', 'full')}
+            ${field('Tautan TikTok', 'site-tiktok-url', s.tiktokUrl || '', 'url', 'full')}
+          </div><p class="notice">Kosongkan tautan Facebook/Instagram/TikTok jika ingin menyembunyikan tautan tersebut. Ikon custom tetap dipertahankan. Link WhatsApp memakai satu nomor yang sama untuk menjaga checkout tetap konsisten.</p>
         </section>
         <section class="section-card"><div class="section-heading"><div><div class="section-label">Logo dan gambar utama</div><h2>Ganti logo serta tiga banner halaman depan</h2><p class="muted">Pilih gambar baru untuk setiap slot. Gambar langsung dikirim ke GitHub dan area yang terkait diperbarui. Jangan tutup halaman sampai muncul notifikasi hasil.</p></div></div>
           <h3 class="site-setting-subtitle">Logo</h3><div class="site-assets-grid">
@@ -450,7 +541,7 @@
           ${field('Email / kontak email', 'contact-email', c.email, 'text')}
           ${field('Jam operasional', 'contact-hours', c.hours, 'text', 'full')}
         </div></section>
-        ${renderSiteSettings(site)}
+        ${renderSiteSettings(site, data.whatsappUrl || whatsappUrlFromNumber(c.phoneWhatsapp))}
         <section class="section-card"><div class="section-heading"><div><div class="section-label">Bagian utama</div><h2>Hero / halaman depan</h2><p class="muted">Teks utama yang ditampilkan di bagian depan website.</p></div></div><div class="form-grid">
           ${field('Judul besar', 'hero-title', h.title)}
           ${field('Subjudul', 'hero-subtitle', h.subtitle)}
@@ -489,7 +580,45 @@
         <p class="notice">Foto yang diunggah disimpan ke folder assets di GitHub. Setiap penyimpanan membuat commit baru. Jangan tutup halaman sampai popup hasil muncul.</p>`;
       $('#uploadSiteGallery').addEventListener('click', () => handleSiteGalleryUpload());
       $('#uploadSiteGalleryVideo').addEventListener('click', () => handleSiteGalleryVideoUpload());
+      bindWhatsAppSettingsControls();
+      refreshEditorTools();
     }
+    function refreshEditorTools() {
+      const editor = $('#editor');
+      const nav = $('#editorQuickNav');
+      const search = $('#editorSectionSearch');
+      const counter = $('#editorSectionCount');
+      if (!editor || !nav || !search || !counter) return;
+      const query = search.value.trim().toLocaleLowerCase('id');
+      const sections = Array.from(editor.children).filter(node => node.classList && node.classList.contains('section-card'));
+      let visible = 0;
+      const buttons = [];
+      sections.forEach((section, index) => {
+        const title = section.querySelector('.section-heading h2')?.textContent.trim() || `Bagian ${index + 1}`;
+        const eyebrow = section.querySelector('.section-label')?.textContent.trim() || '';
+        const searchable = `${eyebrow} ${title} ${section.textContent}`.toLocaleLowerCase('id');
+        const matched = !query || searchable.includes(query);
+        section.hidden = !matched;
+        section.dataset.editorSectionIndex = String(index);
+        if (matched) {
+          visible++;
+          buttons.push(`<button type="button" class="editor-nav-chip" data-section-index="${index}" title="${esc(`${eyebrow} · ${title}`)}"><span>${esc(title)}</span><small>${esc(eyebrow)}</small></button>`);
+        }
+      });
+      nav.innerHTML = buttons.length ? buttons.join('') : '<span class="editor-nav-empty">Tidak ada bagian yang cocok. Coba kata kunci lain.</span>';
+      counter.textContent = query ? `Menampilkan ${visible} dari ${sections.length} bagian` : `${sections.length} bagian pengaturan · klik untuk menuju bagian`;
+    }
+    $('#editorSectionSearch').addEventListener('input', refreshEditorTools);
+    $('#editorQuickNav').addEventListener('click', event => {
+      const button = event.target.closest('button[data-section-index]');
+      if (!button) return;
+      const sections = Array.from($('#editor').children).filter(node => node.classList && node.classList.contains('section-card'));
+      const section = sections[Number(button.dataset.sectionIndex)];
+      if (!section || section.hidden) return;
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      section.classList.add('admin-section-focus');
+      window.setTimeout(() => section.classList.remove('admin-section-focus'), 1300);
+    });
     function readForm() {
       const value = id => { const element = $(id); return element ? element.value.trim() : ''; };
       const products = Array.from($('#editor').querySelectorAll('[data-editor-product-id]')).map(card => {
@@ -510,6 +639,9 @@
         text: value(`#testimonial-${row.dataset.testimonialIndex}-text`),
       }));
       const oldSite = latestData?.siteSettings || {};
+      // The contact phone remains the single source of truth. Editing the WhatsApp link
+      // synchronizes this field before Save, so checkout and all WhatsApp links stay aligned.
+      const resolvedWhatsappPhone = value('#contact-phone-wa');
       const navLabels = Object.fromEntries(['home','products','about','gallery','testimonials','contact'].map(key => [key, value(`#site-nav-${key}`)]));
       const footerNavLabels = Object.fromEntries(['home','products','about','gallery','contact'].map(key => [key, value(`#site-footer-nav-${key}`)]));
       const heroStats = [0,1,2].map(i => ({ value: value(`#site-hero-stat-${i}-value`), label: value(`#site-hero-stat-${i}-label`) }));
@@ -539,7 +671,7 @@
         faqTitle: value('#site-faq-title'), faqs,
       };
       return {
-        contact: { location: value('#contact-location'), phonePrimary: value('#contact-phone-primary'), phoneWhatsapp: value('#contact-phone-wa'), email: value('#contact-email'), hours: value('#contact-hours') },
+        contact: { location: value('#contact-location'), phonePrimary: value('#contact-phone-primary'), phoneWhatsapp: resolvedWhatsappPhone, email: value('#contact-email'), hours: value('#contact-hours') },
         hero: { title: value('#hero-title'), subtitle: value('#hero-subtitle'), story: value('#hero-story'), tagline: value('#hero-tagline') },
         about: { title: value('#about-title'), paragraph1: value('#about-p1'), paragraph2: value('#about-p2') },
         siteSettings, promos, products, testimonials,
