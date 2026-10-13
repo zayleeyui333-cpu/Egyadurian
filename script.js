@@ -2,6 +2,24 @@
    EGYA DURIAN PREMIUM
 ========================= */
 
+/* =========================
+   CONFIGURED WHATSAPP NUMBER
+========================= */
+function getConfiguredWhatsAppNumber() {
+  const configured = document.body?.getAttribute('data-admin-whatsapp-number') || '';
+  const digits = configured.replace(/\D/g, '');
+  if (digits.length >= 7 && digits.length <= 15) return digits;
+  const candidates = [
+    document.querySelector('.floating-wa')?.getAttribute('href') || '',
+    ...Array.from(document.querySelectorAll('.hero-social a, .footer-social a')).map(anchor => anchor.getAttribute('href') || ''),
+  ];
+  for (const href of candidates) {
+    const match = href.match(/wa\.me\/(\d{7,15})/i);
+    if (match) return match[1];
+  }
+  return '6281378874840';
+}
+
 let cart = [];
 
 let discount = 0;
@@ -818,7 +836,7 @@ pesan +=
 
 window.open(
 
-`https://wa.me/6281378874840?text=${encodeURIComponent(pesan)}`,
+`https://wa.me/${getConfiguredWhatsAppNumber()}?text=${encodeURIComponent(pesan)}`,
 
 "_blank"
 
@@ -1628,7 +1646,7 @@ const nama = document.getElementById("nama").value;
 const kota = document.getElementById("kota").value;
 const pesan = document.getElementById("pesan").value;
 
-const nomorWA = "6281378874840";
+const nomorWA = getConfiguredWhatsAppNumber();
 
 const text =
 `Halo EGYA DURIAN 🍈

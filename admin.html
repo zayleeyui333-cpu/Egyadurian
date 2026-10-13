@@ -45,6 +45,18 @@
     @media(max-width:650px){.photo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.photo-manager{padding:9px}.photo-add-row{align-items:stretch;flex-direction:column}.photo-add-row button{width:100%}}
 
 
+    .site-settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .site-assets-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
+    .site-asset-card{min-width:0;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fbfcfb}
+    .site-asset-card img{display:block;width:100%;height:118px;object-fit:contain;border-radius:8px;background:#edf2ed;margin-bottom:8px}
+    .site-asset-card .asset-path{font-size:10px;color:var(--muted);overflow-wrap:anywhere;min-height:28px;margin:6px 0}
+    .site-asset-card .file-input{width:100%;font-size:11px;margin-top:7px}
+    .site-asset-card button{width:100%;margin-top:8px;font-size:12px;padding:9px}
+    .site-setting-subtitle{font-size:14px;margin:16px 0 10px;color:var(--green)}
+    .site-faq-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .site-faq-card{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fbfcfb;min-width:0}
+    .site-faq-card textarea{min-height:70px}
+    @media(max-width:650px){.site-settings-grid,.site-assets-grid,.site-faq-list{grid-template-columns:1fr}.site-asset-card img{height:150px}}
     .site-gallery-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:12px}
     .site-gallery-tile{min-width:0;border:1px solid var(--line);border-radius:12px;padding:9px;background:#fbfcfb}
     .site-gallery-tile img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;background:#edf2ed}
@@ -185,6 +197,133 @@
       const note = 'JPG/PNG/WebP · maksimal 2 MB';
       return `<div class="upload-row"><input class="file-input" id="heroFile" type="file" accept="image/jpeg,image/png,image/webp"><button class="secondary" type="button" id="uploadHero">Ganti Banner</button><span class="upload-note">${esc(note)}</span></div>`;
     }
+    function siteAssetUploadCard(label, target, path, index = null) {
+      const suffix = index === null ? 'one' : String(index);
+      const inputId = `site-asset-file-${target}-${suffix}`;
+      const indexAttr = index === null ? '' : ` data-index="${index}"`;
+      const preview = path ? `<img src="${esc(path)}" alt="${esc(label)}" loading="lazy">` : `<div style="height:118px;display:grid;place-items:center;background:#edf2ed;border-radius:8px;color:#647067;font-size:12px">Belum ada file</div>`;
+      return `<article class="site-asset-card">
+        <strong style="display:block;font-size:13px">${esc(label)}</strong>
+        ${preview}
+        <div class="asset-path">${esc(path || 'Belum ada path file')}</div>
+        <input class="file-input" id="${esc(inputId)}" data-site-asset-file="true" data-target="${esc(target)}"${indexAttr} type="file" accept="image/jpeg,image/png,image/webp" aria-label="Pilih file untuk ${esc(label)}">
+        <button class="secondary" type="button" data-action="upload-site-image" data-target="${esc(target)}"${indexAttr}>Ganti ${esc(label)}</button>
+        ${target.startsWith('siteSocial') && path ? `<button class="secondary" type="button" data-action="reset-social-icon" data-target="${esc(target)}">Kembali ke ikon standar</button>` : ''}
+        <span class="upload-note">JPG/PNG/WebP · maksimal 2 MB</span>
+      </article>`;
+    }
+    function renderSiteSettings(s) {
+      s = s || {};
+      const navItems = [['home','Home'],['products','Produk'],['about','Tentang'],['gallery','Galeri'],['testimonials','Testimoni'],['contact','Kontak']];
+      const footerItems = [['home','Home'],['products','Produk'],['about','Tentang'],['gallery','Galeri'],['contact','Kontak']];
+      const filterItems = [['all','Semua'],['musang','Musang King'],['blackthorn','Black Thorn'],['monthong','Monthong'],['kupas','Durian Kupas'],['pancake','Pancake Durian'],['pancakeroll','Pancake Rolls'],['lainnya','Lainnya']];
+      const buttonTargets = [['#products','Bagian Produk'],['#about','Bagian Tentang'],['#gallery','Bagian Galeri'],['#contact','Bagian Kontak'],['#testimonials','Bagian Testimoni'],['#home','Beranda']];
+      const heroButtons = [0,1].map(i => {
+        const item = (s.heroButtons || [])[i] || { text: '', href: i ? '#about' : '#products' };
+        return `<article class="site-faq-card"><h3 style="font-size:13px;margin:0 0 10px">Tombol hero ${i + 1}</h3><div class="form-grid">
+          ${field('Teks tombol', `site-button-${i}-text`, item.text || '')}
+          ${selectField('Tujuan tombol', `site-button-${i}-href`, item.href || (i ? '#about' : '#products'), buttonTargets)}
+        </div></article>`;
+      }).join('');
+      const heroStats = [0,1,2].map(i => {
+        const item = (s.heroStats || [])[i] || { value: '', label: '' };
+        return `<article class="site-faq-card"><h3 style="font-size:13px;margin:0 0 10px">Statistik halaman depan ${i + 1}</h3><div class="form-grid">
+          ${field('Angka (tanpa titik/koma)', `site-hero-stat-${i}-value`, item.value, 'text')}
+          ${field('Label', `site-hero-stat-${i}-label`, item.label)}
+        </div></article>`;
+      }).join('');
+      const lowerStats = [0,1,2,3].map(i => {
+        const item = (s.lowerStats || [])[i] || { value: '', label: '' };
+        return `<article class="site-faq-card"><h3 style="font-size:13px;margin:0 0 10px">Statistik tambahan ${i + 1}</h3><div class="form-grid">
+          ${field('Nilai', `site-lower-stat-${i}-value`, item.value)}
+          ${field('Label', `site-lower-stat-${i}-label`, item.label)}
+        </div></article>`;
+      }).join('');
+      const faqItems = (s.faqs || []).map((item, i) => `<article class="site-faq-card" data-site-faq-index="${i}">
+        <div class="editable-card-heading"><h3>FAQ ${i + 1}</h3><button class="danger remove-button" type="button" data-action="remove-site-faq" data-index="${i}">Hapus FAQ</button></div>
+        ${field('Pertanyaan', `site-faq-${i}-question`, item.question || '', 'text', 'full')}
+        ${textarea('Jawaban', `site-faq-${i}-answer`, item.answer || '', 'full')}
+      </article>`).join('');
+      return `
+        <section class="section-card"><div class="section-heading"><div><div class="section-label">Pengaturan umum</div><h2>Identitas brand dan media sosial</h2><p class="muted">Ubah nama, tagline, serta tautan media sosial dari sini. Nomor WhatsApp utama mengikuti kolom Nomor WhatsApp di bagian Kontak toko.</p></div></div>
+          <div class="form-grid">
+            ${field('Nama brand', 'site-brand-name', s.brandName || '')}
+            ${field('Tagline brand', 'site-brand-tagline', s.brandTagline || '')}
+            ${field('Tautan Facebook', 'site-facebook-url', s.facebookUrl || '', 'text', 'full')}
+            ${field('Tautan Instagram', 'site-instagram-url', s.instagramUrl || '', 'text', 'full')}
+            ${field('Tautan TikTok', 'site-tiktok-url', s.tiktokUrl || '', 'text', 'full')}
+          </div><p class="notice">Kosongkan tautan media sosial jika ingin menyembunyikan tautan tersebut. Ikon Facebook/Instagram/TikTok tetap memakai ikon platform, sedangkan URL-nya akan mengikuti isian ini.</p>
+        </section>
+        <section class="section-card"><div class="section-heading"><div><div class="section-label">Logo dan gambar utama</div><h2>Ganti logo serta tiga banner halaman depan</h2><p class="muted">Pilih gambar baru untuk setiap slot. Gambar langsung dikirim ke GitHub dan area yang terkait diperbarui. Jangan tutup halaman sampai muncul notifikasi hasil.</p></div></div>
+          <h3 class="site-setting-subtitle">Logo</h3><div class="site-assets-grid">
+            ${siteAssetUploadCard('Logo header / loader / tentang', 'siteLogoHeader', s.headerLogoPath || '')}
+            ${siteAssetUploadCard('Logo hero', 'siteLogoHero', s.heroLogoPath || '')}
+            ${siteAssetUploadCard('Ikon verifikasi', 'siteVerifiedIcon', s.verifiedIconPath || '')}
+            ${siteAssetUploadCard('Favicon / ikon tab', 'siteFavicon', s.faviconPath || '')}
+          </div>
+          <h3 class="site-setting-subtitle">Ikon media sosial</h3><p class="muted">Upload logo PNG/WebP transparan untuk mengganti ikon default. Ikon yang diunggah akan dipakai di bagian sosial halaman depan dan footer sekaligus.</p><div class="site-assets-grid">
+            ${siteAssetUploadCard('Ikon Facebook', 'siteSocialFacebook', s.facebookIconPath || '')}
+            ${siteAssetUploadCard('Ikon Instagram', 'siteSocialInstagram', s.instagramIconPath || '')}
+            ${siteAssetUploadCard('Ikon TikTok', 'siteSocialTikTok', s.tiktokIconPath || '')}
+            ${siteAssetUploadCard('Ikon WhatsApp', 'siteSocialWhatsApp', s.whatsappIconPath || '')}
+          </div>
+          <h3 class="site-setting-subtitle">Banner halaman depan</h3><div class="site-assets-grid">
+            ${[0,1,2].map(i => siteAssetUploadCard(`Banner ${i + 1}`, 'heroBanner', (s.heroBanners || [])[i] || '', i)).join('')}
+          </div>
+        </section>
+        <section class="section-card"><div class="section-heading"><div><div class="section-label">SEO dan navigasi</div><h2>Judul mesin pencari dan menu website</h2><p class="muted">Judul halaman dan metadata membantu tab browser serta hasil mesin pencari. Menu bisa diubah teksnya tanpa mengganti fungsi anchor.</p></div></div>
+          <div class="form-grid">
+            ${field('Judul halaman / SEO title', 'site-page-title', s.pageTitle || '', 'text', 'full')}
+            ${field('Nama author', 'site-meta-author', s.metaAuthor || '')}
+            ${field('Kata kunci SEO', 'site-meta-keywords', s.metaKeywords || '', 'text', 'full')}
+            ${field('Deskripsi SEO', 'site-meta-description', s.metaDescription || '', 'text', 'full')}
+          </div>
+          <h3 class="site-setting-subtitle">Teks menu header</h3><div class="site-settings-grid">${navItems.map(([key,label]) => field(label, `site-nav-${key}`, (s.navLabels || {})[key] || label)).join('')}</div>
+          <h3 class="site-setting-subtitle">Teks menu footer</h3><div class="site-settings-grid">${footerItems.map(([key,label]) => field(label, `site-footer-nav-${key}`, (s.footerNavLabels || {})[key] || label)).join('')}</div>
+          <h3 class="site-setting-subtitle">Tombol di hero</h3><div class="site-faq-list">${heroButtons}</div>
+        </section>
+        <section class="section-card"><div class="section-heading"><div><div class="section-label">Teks dan komponen halaman</div><h2>Rating, statistik, judul bagian, footer, formulir dan FAQ</h2><p class="muted">Pengaturan ini mengubah teks yang tampil pada komponen yang tercantum. Produk, promo, testimoni, kontak, deskripsi Tentang, serta galeri tetap punya editor masing-masing di bagian dashboard.</p></div></div>
+          <div class="form-grid">
+            ${field('Teks rating hero', 'site-hero-rating', s.heroRating || '', 'text', 'full')}
+            ${field('Judul Galeri', 'site-gallery-title', s.galleryTitle || '')}
+            ${field('Judul Testimoni', 'site-testimonial-title', s.testimonialTitle || '')}
+            ${field('Judul Kontak', 'site-contact-title', s.contactTitle || '')}
+            ${field('Judul Google Maps', 'site-map-title', s.mapTitle || '')}
+            ${field('URL embed Google Maps', 'site-map-embed-url', s.mapEmbedUrl || '', 'text', 'full')}
+            ${field('Judul menu footer', 'site-footer-menu-title', s.footerMenuTitle || '')}
+            ${field('Judul sosial footer', 'site-footer-social-title', s.footerSocialTitle || '')}
+            ${field('Teks copyright footer', 'site-footer-copy', s.footerCopy || '', 'text', 'full')}
+            ${field('Placeholder nama member', 'site-member-placeholder', s.memberPlaceholder || '')}
+            ${field('Teks tombol member', 'site-member-button', s.memberButtonLabel || '')}
+            ${field('Placeholder pencarian produk', 'site-search-placeholder', s.searchPlaceholder || '')}
+            ${field('Placeholder nama pada formulir kontak', 'site-contact-name-placeholder', s.contactFormNamePlaceholder || '')}
+            ${field('Placeholder kota pada formulir kontak', 'site-contact-city-placeholder', s.contactFormCityPlaceholder || '')}
+            ${field('Placeholder pesan formulir kontak', 'site-contact-message-placeholder', s.contactFormMessagePlaceholder || '', 'text', 'full')}
+            ${field('Teks tombol formulir kontak', 'site-contact-form-button', s.contactFormButton || '')}
+            ${field('Placeholder voucher', 'site-coupon-placeholder', s.couponPlaceholder || '')}
+            ${field('Teks keranjang kosong', 'site-cart-empty-text', s.cartEmptyText || '')}
+            ${textarea('Deskripsi default pada detail produk', 'site-modal-description', s.modalDescription || '', 'full')}
+          </div>
+          <h3 class="site-setting-subtitle">Filter produk, keranjang, dan checkout</h3>
+          <p class="muted">Bagian ini hanya mengubah label yang terlihat. Kode fungsi filter, voucher, keranjang, dan proses checkout tidak diubah.</p>
+          <div class="site-settings-grid">
+            ${filterItems.map(([key,label]) => field(`Label filter: ${label}`, `site-filter-${key}`, (s.filterLabels || {})[key] || label)).join('')}
+            ${field('Judul keranjang', 'site-cart-title', s.cartTitle || '')}
+            ${field('Label total (termasuk mata uang)', 'site-cart-total-label', s.cartTotalLabel || '')}
+            ${field('Teks tombol voucher', 'site-apply-voucher-label', s.applyVoucherButtonLabel || '')}
+            ${field('Teks info diskon awal', 'site-discount-info-text', s.discountInfoText || '')}
+            ${field('Teks tombol checkout', 'site-checkout-button-label', s.checkoutButtonLabel || '')}
+            ${field('Teks tombol tambah produk', 'site-product-add-label', s.productAddButtonLabel || '')}
+            ${field('Teks notifikasi awal', 'site-toast-text', s.toastText || '')}
+          </div>
+          <h3 class="site-setting-subtitle">Label metode pembayaran</h3><div class="site-settings-grid">${[0,1,2].map(i => field(`Pilihan pembayaran ${i + 1}`, `site-payment-option-${i}`, (s.paymentOptions || [])[i] || '')).join('')}</div>
+          <h3 class="site-setting-subtitle">Statistik hero</h3><div class="site-faq-list">${heroStats}</div>
+          <h3 class="site-setting-subtitle">Statistik tambahan</h3><div class="site-faq-list">${lowerStats}</div>
+          <div class="editable-card-heading" style="margin-top:18px"><h3>FAQ yang tampil di website</h3><button class="primary" type="button" data-action="add-site-faq">+ Tambah FAQ</button></div>
+          ${field('Judul bagian FAQ', 'site-faq-title', s.faqTitle || 'FAQ', 'text', 'full')}
+          <div class="site-faq-list" style="margin-top:12px">${faqItems || '<p class="muted">Belum ada FAQ. Gunakan tombol Tambah FAQ untuk membuat pertanyaan.</p>'}</div>
+        </section>`;
+    }
     function renderPhotoManager(product) {
       const id = product.id;
       const isPersisted = persistedProductIds.has(id);
@@ -236,7 +375,7 @@
     }
     function renderEditor(data) {
       latestData = data;
-      const c = data.contact, h = data.hero, a = data.about;
+      const c = data.contact, h = data.hero, a = data.about, site = data.siteSettings || {};
       const products = data.products.map(p => `
         <article class="product-card" data-editor-product-id="${esc(p.id)}">
           <div class="editable-card-heading"><h3>${esc(p.name || 'Produk baru')}</h3><button class="danger remove-button" type="button" data-action="remove-product" data-id="${esc(p.id)}">Hapus Produk</button></div>
@@ -311,12 +450,13 @@
           ${field('Email / kontak email', 'contact-email', c.email, 'text')}
           ${field('Jam operasional', 'contact-hours', c.hours, 'text', 'full')}
         </div></section>
-        <section class="section-card"><div class="section-heading"><div><div class="section-label">Bagian utama</div><h2>Hero / halaman depan</h2><p class="muted">Teks besar yang pertama dilihat pengunjung.</p></div></div><div class="form-grid">
+        ${renderSiteSettings(site)}
+        <section class="section-card"><div class="section-heading"><div><div class="section-label">Bagian utama</div><h2>Hero / halaman depan</h2><p class="muted">Teks utama yang ditampilkan di bagian depan website.</p></div></div><div class="form-grid">
           ${field('Judul besar', 'hero-title', h.title)}
           ${field('Subjudul', 'hero-subtitle', h.subtitle)}
           ${textarea('Kalimat pengenalan', 'hero-story', h.story, 'full')}
           ${textarea('Daftar produk singkat', 'hero-tagline', h.tagline, 'full')}
-        </div>${fileUpload('hero')}</section>
+        </div></section>
         <section class="section-card"><div class="section-heading"><div><div class="section-label">Tentang toko</div><h2>Deskripsi EGYA DURIAN</h2></div></div><div class="form-grid">
           ${field('Judul bagian', 'about-title', a.title, 'text', 'full')}
           ${textarea('Paragraf pertama', 'about-p1', a.paragraph1, 'full')}
@@ -347,7 +487,6 @@
         <section class="section-card"><div class="section-heading"><div><div class="section-label">Produk</div><h2>Harga, nama, dan foto produk</h2><p class="muted">Tambah/hapus produk. Card baru mengikuti desain card produk website. Setelah produk disimpan, unggah fotonya.</p></div><button class="primary" type="button" data-action="add-product">+ Tambah Produk</button></div><div class="product-grid">${products}</div></section>
         <section class="section-card"><div class="section-heading"><div><div class="section-label">Ulasan pelanggan</div><h2>Testimoni</h2><p class="muted">Tambah atau hapus testimoni pelanggan.</p></div><button class="primary" type="button" data-action="add-testimonial">+ Tambah Testimoni</button></div><div class="product-grid">${testimonials || '<p class="muted">Belum ada testimoni. Gunakan tombol Tambah Testimoni untuk menambah.</p>'}</div></section>
         <p class="notice">Foto yang diunggah disimpan ke folder assets di GitHub. Setiap penyimpanan membuat commit baru. Jangan tutup halaman sampai popup hasil muncul.</p>`;
-      $('#uploadHero').addEventListener('click', () => handleHeroUpload());
       $('#uploadSiteGallery').addEventListener('click', () => handleSiteGalleryUpload());
       $('#uploadSiteGalleryVideo').addEventListener('click', () => handleSiteGalleryVideoUpload());
     }
@@ -370,11 +509,40 @@
         name: value(`#testimonial-${row.dataset.testimonialIndex}-name`),
         text: value(`#testimonial-${row.dataset.testimonialIndex}-text`),
       }));
+      const oldSite = latestData?.siteSettings || {};
+      const navLabels = Object.fromEntries(['home','products','about','gallery','testimonials','contact'].map(key => [key, value(`#site-nav-${key}`)]));
+      const footerNavLabels = Object.fromEntries(['home','products','about','gallery','contact'].map(key => [key, value(`#site-footer-nav-${key}`)]));
+      const heroStats = [0,1,2].map(i => ({ value: value(`#site-hero-stat-${i}-value`), label: value(`#site-hero-stat-${i}-label`) }));
+      const lowerStats = [0,1,2,3].map(i => ({ value: value(`#site-lower-stat-${i}-value`), label: value(`#site-lower-stat-${i}-label`) }));
+      const heroButtons = [0,1].map(i => ({ text: value(`#site-button-${i}-text`), href: value(`#site-button-${i}-href`) }));
+      const faqs = Array.from($('#editor').querySelectorAll('[data-site-faq-index]')).map(row => ({
+        question: value(`#site-faq-${row.dataset.siteFaqIndex}-question`),
+        answer: value(`#site-faq-${row.dataset.siteFaqIndex}-answer`),
+      }));
+      const siteSettings = {
+        ...oldSite,
+        brandName: value('#site-brand-name'), brandTagline: value('#site-brand-tagline'),
+        facebookUrl: value('#site-facebook-url'), instagramUrl: value('#site-instagram-url'), tiktokUrl: value('#site-tiktok-url'),
+        filterLabels: Object.fromEntries(['all','musang','blackthorn','monthong','kupas','pancake','pancakeroll','lainnya'].map(key => [key, value(`#site-filter-${key}`)])),
+        cartTitle: value('#site-cart-title'), cartTotalLabel: value('#site-cart-total-label'), applyVoucherButtonLabel: value('#site-apply-voucher-label'),
+        discountInfoText: value('#site-discount-info-text'), paymentOptions: [0,1,2].map(i => value(`#site-payment-option-${i}`)),
+        checkoutButtonLabel: value('#site-checkout-button-label'), productAddButtonLabel: value('#site-product-add-label'), toastText: value('#site-toast-text'),
+        pageTitle: value('#site-page-title'), metaDescription: value('#site-meta-description'), metaKeywords: value('#site-meta-keywords'), metaAuthor: value('#site-meta-author'),
+        heroRating: value('#site-hero-rating'), heroStats, lowerStats, navLabels, footerNavLabels, heroButtons,
+        galleryTitle: value('#site-gallery-title'), testimonialTitle: value('#site-testimonial-title'), contactTitle: value('#site-contact-title'),
+        mapTitle: value('#site-map-title'), mapEmbedUrl: value('#site-map-embed-url'),
+        footerMenuTitle: value('#site-footer-menu-title'), footerSocialTitle: value('#site-footer-social-title'), footerCopy: value('#site-footer-copy'),
+        memberPlaceholder: value('#site-member-placeholder'), memberButtonLabel: value('#site-member-button'), searchPlaceholder: value('#site-search-placeholder'),
+        contactFormNamePlaceholder: value('#site-contact-name-placeholder'), contactFormCityPlaceholder: value('#site-contact-city-placeholder'),
+        contactFormMessagePlaceholder: value('#site-contact-message-placeholder'), contactFormButton: value('#site-contact-form-button'),
+        couponPlaceholder: value('#site-coupon-placeholder'), cartEmptyText: value('#site-cart-empty-text'), modalDescription: value('#site-modal-description'),
+        faqTitle: value('#site-faq-title'), faqs,
+      };
       return {
         contact: { location: value('#contact-location'), phonePrimary: value('#contact-phone-primary'), phoneWhatsapp: value('#contact-phone-wa'), email: value('#contact-email'), hours: value('#contact-hours') },
         hero: { title: value('#hero-title'), subtitle: value('#hero-subtitle'), story: value('#hero-story'), tagline: value('#hero-tagline') },
         about: { title: value('#about-title'), paragraph1: value('#about-p1'), paragraph2: value('#about-p2') },
-        promos, products, testimonials,
+        siteSettings, promos, products, testimonials,
         gallery: Array.from($('#editor').querySelectorAll('[data-site-gallery-src]')).map(tile => tile.dataset.siteGallerySrc),
         galleryVideos: (() => { try { return JSON.parse(value('#siteGalleryVideos') || '[]'); } catch { return normalizeGalleryVideos(latestData || {}); } })(),
       };
@@ -395,6 +563,18 @@
         contact: draftData.contact,
         hero: draftData.hero,
         about: draftData.about,
+        siteSettings: {
+          ...(serverData.siteSettings || {}), ...(draftData.siteSettings || {}),
+          heroBanners: draftData.siteSettings?.heroBanners || serverData.siteSettings?.heroBanners || [],
+          heroStats: draftData.siteSettings?.heroStats || serverData.siteSettings?.heroStats || [],
+          lowerStats: draftData.siteSettings?.lowerStats || serverData.siteSettings?.lowerStats || [],
+          navLabels: { ...(serverData.siteSettings?.navLabels || {}), ...(draftData.siteSettings?.navLabels || {}) },
+          footerNavLabels: { ...(serverData.siteSettings?.footerNavLabels || {}), ...(draftData.siteSettings?.footerNavLabels || {}) },
+          filterLabels: { ...(serverData.siteSettings?.filterLabels || {}), ...(draftData.siteSettings?.filterLabels || {}) },
+          paymentOptions: draftData.siteSettings?.paymentOptions || serverData.siteSettings?.paymentOptions || [],
+          heroButtons: draftData.siteSettings?.heroButtons || serverData.siteSettings?.heroButtons || [],
+          faqs: draftData.siteSettings?.faqs || serverData.siteSettings?.faqs || [],
+        },
         promos: draftData.promos,
         testimonials: draftData.testimonials,
         gallery: draftData.gallery || serverData.gallery || [],
@@ -443,6 +623,76 @@
       } catch (error) {
         showStatus($('#mainStatus'), error.message, true);
         showPopup('Gagal mengganti banner', error.message, true);
+      } finally { busy = false; setButtons(false); }
+    }
+    async function handleResetSocialIcon(button) {
+      if (busy) return;
+      const target = button.dataset.target || '';
+      const config = {
+        siteSocialFacebook: ['resetSocialIconFacebook', 'facebookIconPath', 'Facebook'],
+        siteSocialInstagram: ['resetSocialIconInstagram', 'instagramIconPath', 'Instagram'],
+        siteSocialTikTok: ['resetSocialIconTikTok', 'tiktokIconPath', 'TikTok'],
+        siteSocialWhatsApp: ['resetSocialIconWhatsApp', 'whatsappIconPath', 'WhatsApp'],
+      }[target];
+      if (!config) return showPopup('Ikon tidak valid', 'Muat ulang halaman admin lalu coba lagi.', true);
+      if (!confirm(`Kembalikan ikon ${config[2]} ke ikon standar? Tautan media sosial tidak berubah.`)) return;
+      const draft = readForm();
+      busy = true; setButtons(true);
+      try {
+        const result = await api('/api/admin/upload', { method: 'POST', body: JSON.stringify({ target: config[0] }) });
+        const latest = await api('/api/admin/content');
+        persistedProductIds = new Set(latest.data.products.map(product => product.id));
+        const merged = mergeDraftIntoServer(latest.data, draft);
+        merged.siteSettings[config[1]] = '';
+        renderEditor(merged);
+        showStatus($('#mainStatus'), result.message || `Ikon ${config[2]} kembali ke ikon standar.`);
+        showPopup('Ikon dikembalikan', result.message || `Ikon ${config[2]} kembali ke ikon standar.`, false);
+      } catch (error) {
+        showStatus($('#mainStatus'), error.message, true);
+        showPopup('Gagal mengembalikan ikon', error.message, true);
+      } finally { busy = false; setButtons(false); }
+    }
+    async function handleSiteImageUpload(button) {
+      if (busy) return;
+      const target = button.dataset.target || '';
+      const index = button.dataset.index === undefined ? null : Number(button.dataset.index);
+      const suffix = index === null ? 'one' : String(index);
+      const input = $(`#site-asset-file-${target}-${suffix}`);
+      const file = input && input.files ? input.files[0] : null;
+      if (!file) return showPopup('Pilih gambar', 'Pilih gambar JPG, PNG, atau WebP pada kartu yang ingin diganti.', true);
+      try { validateImageFile(file); } catch (error) { return showPopup('File tidak valid', error.message, true); }
+      const labels = { siteLogoHeader: 'logo header', siteLogoHero: 'logo hero', siteVerifiedIcon: 'ikon verifikasi', siteFavicon: 'favicon', siteSocialFacebook: 'ikon Facebook', siteSocialInstagram: 'ikon Instagram', siteSocialTikTok: 'ikon TikTok', siteSocialWhatsApp: 'ikon WhatsApp', heroBanner: `banner ${Number(index) + 1}` };
+      const label = labels[target];
+      if (!label) return showPopup('Tujuan gambar tidak valid', 'Muat ulang admin lalu coba lagi.', true);
+      if (!confirm(`Ganti ${label} pada website? Gambar baru akan disimpan ke GitHub dan Vercel akan menerbitkan perubahan otomatis.`)) return;
+      const draft = readForm();
+      busy = true; setButtons(true);
+      try {
+        showStatus($('#mainStatus'), `Mengunggah ${label} ke GitHub…`);
+        const result = await sendImageFile(target, '', file, 'replace', index === null ? 0 : index);
+        const latest = await api('/api/admin/content');
+        persistedProductIds = new Set(latest.data.products.map(product => product.id));
+        const merged = mergeDraftIntoServer(latest.data, draft);
+        const site = merged.siteSettings || (merged.siteSettings = {});
+        if (target === 'siteLogoHeader') site.headerLogoPath = result.path;
+        else if (target === 'siteLogoHero') site.heroLogoPath = result.path;
+        else if (target === 'siteVerifiedIcon') site.verifiedIconPath = result.path;
+        else if (target === 'siteSocialFacebook') site.facebookIconPath = result.path;
+        else if (target === 'siteSocialInstagram') site.instagramIconPath = result.path;
+        else if (target === 'siteSocialTikTok') site.tiktokIconPath = result.path;
+        else if (target === 'siteSocialWhatsApp') site.whatsappIconPath = result.path;
+        else if (target === 'siteFavicon') site.faviconPath = result.path;
+        else if (target === 'heroBanner') {
+          site.heroBanners = Array.isArray(site.heroBanners) ? site.heroBanners.slice() : [];
+          while (site.heroBanners.length < 3) site.heroBanners.push('');
+          site.heroBanners[index] = result.path;
+        }
+        renderEditor(merged);
+        showStatus($('#mainStatus'), result.message || `${label} berhasil diganti.`);
+        showPopup(`${label} berhasil diganti`, `${result.message || 'Gambar berhasil diperbarui.'} Perubahan teks yang belum disimpan tetap berada di formulir.`, false);
+      } catch (error) {
+        showStatus($('#mainStatus'), error.message, true);
+        showPopup(`Gagal mengganti ${label}`, error.message, true);
       } finally { busy = false; setButtons(false); }
     }
     async function handleSiteGalleryUpload() {
@@ -715,8 +965,32 @@ Pastikan Blob Store Public terhubung ke project EGYA DURIAN pada Storage → Pro
         handlePermanentVideoDelete(button);
         return;
       }
+      if (action === 'upload-site-image') {
+        handleSiteImageUpload(button);
+        return;
+      }
+      if (action === 'reset-social-icon') {
+        handleResetSocialIcon(button);
+        return;
+      }
       const data = readForm();
-      if (action === 'remove-gallery-photo') {
+      if (action === 'add-site-faq') {
+        const settings = data.siteSettings || (data.siteSettings = {});
+        settings.faqs = Array.isArray(settings.faqs) ? settings.faqs : [];
+        if (settings.faqs.length >= 20) return showPopup('Batas FAQ tercapai', 'Maksimal 20 pertanyaan FAQ dapat ditampilkan.', true);
+        settings.faqs.push({ question: '', answer: '' });
+        renderEditor(data);
+        showStatus($('#mainStatus'), 'FAQ baru ditambahkan. Isi pertanyaan dan jawaban sebelum menyimpan.');
+        $(`#site-faq-${settings.faqs.length - 1}-question`).focus();
+      } else if (action === 'remove-site-faq') {
+        const index = Number(button.dataset.index);
+        const item = (data.siteSettings?.faqs || [])[index];
+        if (!item) return showPopup('FAQ tidak ditemukan', 'Muat ulang data sebelum mencoba lagi.', true);
+        if (!confirm(`Hapus FAQ ${index + 1}? Perubahan diterapkan setelah Simpan Perubahan.`)) return;
+        data.siteSettings.faqs.splice(index, 1);
+        renderEditor(data);
+        showStatus($('#mainStatus'), 'FAQ ditandai untuk dihapus. Tekan Simpan Perubahan untuk menerapkannya.');
+      } else if (action === 'remove-gallery-photo') {
         const index = Number(button.dataset.index);
         const path = data.gallery[index];
         if (!path) return showPopup('Foto tidak ditemukan', 'Muat ulang data galeri lalu coba lagi.', true);
