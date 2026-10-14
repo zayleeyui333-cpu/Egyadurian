@@ -45,6 +45,18 @@
     @media(max-width:650px){.photo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.photo-manager{padding:9px}.photo-add-row{align-items:stretch;flex-direction:column}.photo-add-row button{width:100%}}
 
 
+    .site-settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .site-assets-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
+    .site-asset-card{min-width:0;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fbfcfb}
+    .site-asset-card img{display:block;width:100%;height:118px;object-fit:contain;border-radius:8px;background:#edf2ed;margin-bottom:8px}
+    .site-asset-card .asset-path{font-size:10px;color:var(--muted);overflow-wrap:anywhere;min-height:28px;margin:6px 0}
+    .site-asset-card .file-input{width:100%;font-size:11px;margin-top:7px}
+    .site-asset-card button{width:100%;margin-top:8px;font-size:12px;padding:9px}
+    .site-setting-subtitle{font-size:14px;margin:16px 0 10px;color:var(--green)}
+    .site-faq-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .site-faq-card{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fbfcfb;min-width:0}
+    .site-faq-card textarea{min-height:70px}
+    @media(max-width:650px){.site-settings-grid,.site-assets-grid,.site-faq-list{grid-template-columns:1fr}.site-asset-card img{height:150px}}
     .site-gallery-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:12px}
     .site-gallery-tile{min-width:0;border:1px solid var(--line);border-radius:12px;padding:9px;background:#fbfcfb}
     .site-gallery-tile img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;background:#edf2ed}
@@ -64,203 +76,48 @@
     @media(max-width:650px){.site-gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.gallery-upload-row{align-items:stretch;flex-direction:column}.gallery-upload-row .field{min-width:0}.site-gallery-video-list{grid-template-columns:1fr}.site-gallery-video-panel{max-width:none}.site-gallery-video-upload{padding:11px}}
 
 
-    /* v12: visual polish and quick navigation only. Existing editor/data handlers are preserved. */
-    :root {
-      color-scheme: light;
-      --green: #153f2c;
-      --green2: #246343;
-      --gold: #d8b258;
-      --ink: #17251d;
-      --muted: #637269;
-      --line: #e0e8e1;
-      --paper: #f2f6f2;
-      --white: #fff;
-      --danger: #a72f36;
-      --success: #216e41;
-      --radius-lg: 20px;
-      --shadow-card: 0 10px 28px rgba(21, 54, 34, .055);
-    }
-    html { scroll-behavior: smooth; scroll-padding-top: 176px; }
-    body {
-      background:
-        radial-gradient(900px 420px at 10% -10%, rgba(214, 178, 88, .13), transparent 64%),
-        radial-gradient(860px 430px at 100% 0%, rgba(36, 99, 67, .09), transparent 66%),
-        var(--paper);
-      color: var(--ink);
-      font-size: 14px;
-      line-height: 1.6;
-    }
-    .shell { max-width: 1280px; padding: 28px 24px 90px; }
-    .brand {
-      position: relative;
-      overflow: hidden;
-      border: 1px solid rgba(255,255,255,.1);
-      border-radius: 22px;
-      padding: 22px 26px;
-      background: linear-gradient(120deg, #123a28, #20583b 72%, #2d6a45);
-      box-shadow: 0 18px 42px rgba(17, 58, 37, .17);
-    }
-    .brand::after {
-      content: "";
-      position: absolute;
-      width: 300px;
-      height: 300px;
-      right: -95px;
-      top: -195px;
-      border: 1px solid rgba(240, 211, 137, .22);
-      border-radius: 50%;
-      box-shadow: 0 0 0 26px rgba(240,211,137,.035), 0 0 0 54px rgba(240,211,137,.025);
-      pointer-events: none;
-    }
-    .brand-mark { width: 50px; height: 50px; border-radius: 15px; box-shadow: 0 5px 16px rgba(0,0,0,.12); }
-    .brand h1 { font-size: 21px; letter-spacing: .035em; font-weight: 850; }
-    .brand p { font-size: 12px; letter-spacing: .13em; }
-    .logo-tag { position: relative; z-index: 1; padding: 6px 10px; border: 1px solid rgba(232,197,102,.35); background: rgba(232,197,102,.1); border-radius: 999px; }
-    .login-card { border-radius: 22px; padding: 30px; box-shadow: var(--shadow-card); margin-top: 52px; }
-    .login-card h2 { font-size: 25px; letter-spacing: -.025em; }
-    .panel-intro {
-      margin-top: 20px;
-      padding: 24px 26px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius-lg);
-      background: rgba(255,255,255,.92);
-      box-shadow: var(--shadow-card);
-    }
-    .panel-intro h2 { font-size: 25px; line-height: 1.25; letter-spacing: -.03em; }
-    .panel-intro > p { max-width: 760px; margin: 8px 0 0; }
-    .top-actions { margin-top: 18px; padding-top: 15px; border-top: 1px solid #edf1ed; }
-    .action-group { gap: 9px; }
-    button { border-radius: 12px; padding: 11px 16px; transition: transform .15s ease, box-shadow .15s ease, background .15s ease, border-color .15s ease; }
-    button:not(:disabled):hover { transform: translateY(-1px); }
-    button:not(:disabled):active { transform: translateY(0); }
-    button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3px solid rgba(51,128,82,.24); outline-offset: 2px; }
-    .primary { background: linear-gradient(135deg, var(--green), var(--green2)); box-shadow: 0 4px 10px rgba(21,63,44,.12); }
-    .primary:not(:disabled):hover { box-shadow: 0 7px 16px rgba(21,63,44,.18); }
-    .secondary { background: #f1f6f1; border-color: #d8e5d8; }
-    .secondary:not(:disabled):hover { background: #e8f1e9; border-color: #bed5c1; }
-    .danger { background: #fff4f3; border-color: #efd3d1; }
-    .danger:not(:disabled):hover { background: #ffe9e7; border-color: #e8b8b5; }
-    .muted { color: var(--muted); line-height: 1.55; }
-    .section-tools {
-      position: sticky;
-      top: 9px;
-      z-index: 50;
-      margin-top: 16px;
-      padding: 18px 20px 16px;
-      border: 1px solid rgba(215,226,216,.95);
-      border-radius: 18px;
-      background: rgba(255,255,255,.94);
-      box-shadow: 0 12px 30px rgba(20,55,34,.085);
-      backdrop-filter: blur(16px);
-    }
-    .section-tools-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 13px; }
-    .section-tools-heading h2 { margin: 0; font-size: 19px; line-height: 1.25; letter-spacing: -.02em; }
-    .section-tools-heading .muted { margin: 5px 0 0; font-size: 12px; }
-    .section-count { flex: none; margin-top: 4px; padding: 6px 10px; border-radius: 999px; background: #eff5ef; color: #42634b; font-size: 11px; font-weight: 800; }
-    .section-search-wrap { display: flex; align-items: center; gap: 10px; min-height: 45px; padding: 0 12px; border: 1px solid #dce6dd; border-radius: 12px; background: #f9fbf9; }
-    .section-search-wrap:focus-within { border-color: #8fb89a; box-shadow: 0 0 0 4px rgba(45,130,69,.08); background: #fff; }
-    .section-search-icon { display: inline-grid; place-items: center; width: 22px; color: #52745b; font-size: 25px; line-height: 1; transform: rotate(-15deg); }
-    .section-search-wrap input { min-width: 0; width: 100%; border: 0; outline: 0; background: transparent; color: var(--ink); font: inherit; padding: 10px 0; }
-    .section-search-wrap input:focus { box-shadow: none; }
-    .section-search-wrap input::placeholder { color: #89958c; }
-    .clear-search { flex: none; width: 27px; height: 27px; padding: 0; border-radius: 8px; background: #eaf0ea; color: #54705b; font-size: 19px; line-height: 1; }
-    .section-nav { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-top: 12px; }
-    .section-nav-link { padding: 7px 11px; border: 1px solid #e0e8e1; border-radius: 999px; background: #fff; color: #496151; font-size: 12px; font-weight: 750; white-space: nowrap; }
-    .section-nav-link:not(:disabled):hover { border-color: #b5cdb9; background: #f0f6f0; color: var(--green); }
-    .section-nav-link.active { border-color: #245d38; background: #1b4a31; color: white; box-shadow: 0 3px 8px rgba(21,63,44,.13); }
-    .section-nav-link[hidden] { display: none !important; }
-    .search-empty { margin: 12px 0 0; padding: 10px 12px; border-radius: 10px; background: #fff8e8; color: #76591b; font-size: 12px; }
-    .section-card { scroll-margin-top: 200px; padding: 25px; margin-top: 18px; border: 1px solid #e1e9e2; border-radius: 20px; box-shadow: var(--shadow-card); }
-    .section-card > .section-heading { padding-bottom: 17px; margin-bottom: 20px; border-bottom: 1px solid #edf1ed; }
-    .section-heading { align-items: center; }
-    .section-heading h2 { font-size: 21px; line-height: 1.3; letter-spacing: -.02em; }
-    .section-heading p.muted { max-width: 800px; font-size: 12px; line-height: 1.6; }
-    .section-label { display: inline-flex; align-items: center; min-height: 24px; margin-bottom: 7px; padding: 4px 9px; border: 1px solid #deeadf; border-radius: 999px; background: #eff6ef; color: #426a4a; font-size: 10px; letter-spacing: .105em; }
-    .form-grid { gap: 18px; }
-    .field { gap: 8px; }
-    .field label { font-size: 12px; letter-spacing: .01em; color: #344a3b; }
-    .field input, .field textarea, .field select { min-height: 44px; padding: 11px 13px; border-color: #d9e3da; border-radius: 11px; background: #fff; font-size: 13px; transition: border-color .15s ease, box-shadow .15s ease; }
-    .field textarea { min-height: 106px; line-height: 1.55; }
-    .field input:hover, .field textarea:hover, .field select:hover { border-color: #bdcfbf; }
-    .product-grid { gap: 15px; }
-    .product-card { padding: 17px; border-color: #e2e9e2; border-radius: 16px; background: linear-gradient(160deg, #fff, #fbfdfb); }
-    .product-card h3, .editable-card-heading h3 { font-size: 15px; line-height: 1.4; }
-    .editable-card-heading { align-items: center; padding-bottom: 11px; border-bottom: 1px solid #edf2ed; }
-    .editable-card-heading .remove-button { flex: none; }
-    .price-prefix:before { top: 13px; font-weight: 700; }
-    .upload-row { gap: 10px; margin-top: 14px; }
-    .file-input { width: 100%; padding: 8px; border: 1px dashed #cbd9cd; border-radius: 10px; background: #f8fbf8; color: #56655a; }
-    .upload-note { color: #77847a; font-size: 11px; line-height: 1.5; }
-    .photo-manager { padding: 15px; border-color: #e0e8e0; border-radius: 14px; background: #f8fbf8; }
-    .photo-manager-title { font-size: 13px; }
-    .photo-grid { gap: 12px; }
-    .photo-tile, .site-gallery-tile { padding: 10px; border-color: #e0e8e0; border-radius: 13px; background: #fff; }
-    .photo-tile img, .site-gallery-tile img { border-radius: 9px; }
-    .site-gallery-grid { grid-template-columns: repeat(4, minmax(0,1fr)); gap: 14px; }
-    .site-gallery-video-list { gap: 14px; }
-    .site-gallery-video-panel { padding: 15px; border-color: #dfe8e0; border-radius: 15px; background: #fbfdfb; }
-    .site-gallery-video-preview { max-height: 320px; border-radius: 12px; }
-    .site-gallery-video-upload { padding: 18px; border-color: #bdd1c0; border-radius: 16px; background: linear-gradient(135deg, #f4faf4, #fbfdf9); }
-    .site-gallery-video-upload h3 { font-size: 16px; }
-    .management-row { gap: 8px; }
-    .management-row button { flex: 1 1 auto; }
-    .status { padding: 13px 16px; border: 1px solid transparent; border-radius: 12px; line-height: 1.5; }
-    .status.ok { border-color: #d5e8d8; }
-    .status.error { border-color: #f0d2d0; }
-    .notice { line-height: 1.55; }
-    .bottom-save { bottom: 12px; z-index: 60; padding: 12px 14px 12px 18px; border-color: #dbe5dc; border-radius: 17px; background: rgba(255,255,255,.95); box-shadow: 0 12px 34px rgba(16,45,27,.15); }
-    .bottom-save span { font-size: 12px; line-height: 1.5; }
-    .bottom-save button { min-height: 44px; padding-inline: 21px; }
-    .popup-card { border: 1px solid #e5ebe5; }
-    #editor > .section-card[hidden] { display: none !important; }
-    @media (max-width: 900px) {
-      .shell { max-width: 100%; padding-inline: 18px; }
-      .section-card { padding: 20px; }
-      .site-gallery-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
-      .section-tools { position: sticky; top: 7px; }
-    }
-    @media (max-width: 650px) {
-      html { scroll-padding-top: 22px; }
-      .shell { padding: 12px 10px 100px; }
-      .brand { padding: 15px; border-radius: 16px; gap: 10px; }
-      .brand-mark { width: 42px; height: 42px; border-radius: 12px; font-size: 24px; }
-      .brand h1 { font-size: 16px; }
-      .brand p { font-size: 9px; letter-spacing: .1em; }
-      .logo-tag { padding: 5px 7px; font-size: 9px; }
-      .panel-intro { margin-top: 12px; padding: 18px 16px; border-radius: 16px; }
-      .panel-intro h2 { font-size: 22px; }
-      .top-actions { align-items: flex-start; flex-direction: column; }
-      .action-group { width: 100%; }
-      .action-group button { flex: 1; }
-      .section-tools { position: relative; top: auto; padding: 15px 13px 13px; border-radius: 15px; }
-      .section-tools-heading { gap: 8px; }
-      .section-tools-heading h2 { font-size: 17px; }
-      .section-tools-heading .muted { font-size: 11px; }
-      .section-count { font-size: 10px; padding: 5px 7px; }
-      .section-nav { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 5px; margin-right: -4px; scrollbar-width: thin; }
-      .section-nav-link { flex: 0 0 auto; }
-      .section-card { padding: 16px; margin-top: 13px; border-radius: 16px; scroll-margin-top: 18px; }
-      .section-card > .section-heading { align-items: flex-start; flex-direction: column; gap: 10px; padding-bottom: 13px; margin-bottom: 16px; }
-      .section-heading h2 { font-size: 18px; }
-      .section-heading > button { width: 100%; }
-      .form-grid { gap: 13px; }
-      .product-grid { gap: 12px; }
-      .product-card { padding: 13px; }
-      .site-gallery-grid { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 9px; }
-      .site-gallery-video-panel { padding: 11px; }
-      .gallery-upload-row { gap: 11px; }
-      .gallery-upload-row > button { width: 100%; }
-      .bottom-save { bottom: 6px; padding: 9px; border-radius: 13px; gap: 9px; }
-      .bottom-save span { max-width: 52%; font-size: 10px; }
-      .bottom-save button { min-height: 43px; padding: 10px 12px; font-size: 12px; }
-      .login-card { padding: 22px 18px; }
-      .popup-card { padding: 22px 17px 18px; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      html { scroll-behavior: auto; }
-      *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
-    }
-
+    /* v11 visual refresh: clearer green/gold hierarchy and section finder; editor behavior stays unchanged. */
+    :root{--green:#153d2a;--green2:#26724a;--gold:#dcb45a;--paper:#f3f6f2;--line:#dfe7df;--ink:#17251d;--muted:#64736a}
+    body{background:radial-gradient(circle at 3% 0%,#e4eee4 0,transparent 30%),var(--paper)}
+    .shell{max-width:1240px;padding-top:22px}
+    .brand{background:linear-gradient(115deg,#123522,#245a39);border:1px solid #2c6844;box-shadow:0 12px 30px #153d2a18}
+    .brand-mark{background:linear-gradient(145deg,#fff,#f0e5c8);color:#153d2a;box-shadow:inset 0 0 0 1px #d9c68f}
+    .panel-intro{padding:20px 4px 6px}
+    .panel-intro h2{font-size:clamp(22px,3vw,28px);letter-spacing:-.025em;color:#173d27}
+    .section-card{border-radius:18px;border-color:#dfe7df;box-shadow:0 8px 24px #173d2708;padding:clamp(15px,2.4vw,23px);scroll-margin-top:185px;transition:border-color .18s,box-shadow .18s,transform .18s}
+    .section-card.admin-section-focus{border-color:#c99b36;box-shadow:0 0 0 3px #e6c46b45,0 12px 30px #173d2710}
+    .section-heading{padding-bottom:12px;border-bottom:1px solid #edf1ec;margin-bottom:18px}
+    .section-heading h2{font-size:clamp(17px,2vw,20px);letter-spacing:-.015em;color:#183e2b}
+    .section-label{display:inline-flex;align-items:center;background:#eaf2e8;color:#27613d;padding:5px 8px;border-radius:6px;font-size:10px;letter-spacing:.09em;margin-bottom:9px}
+    .site-setting-subtitle{margin-top:22px;padding-left:10px;border-left:3px solid #dcb45a;font-size:14px;color:#244f34}
+    .field label{line-height:1.3}
+    .field input,.field textarea,.field select{border-color:#d5dfd5;border-radius:11px;padding:11px 12px;transition:border-color .15s,box-shadow .15s}
+    .field input:focus,.field textarea:focus,.field select:focus{border-color:#41875a;box-shadow:0 0 0 3px #41875a1c}
+    .primary{background:linear-gradient(135deg,#17452d,#2c7047);box-shadow:0 3px 9px #173d271c}
+    .primary:hover{background:linear-gradient(135deg,#123923,#245c3b)}
+    .secondary{background:#f2f6f0;border-color:#d6e2d4}
+    .danger{background:#fff3f0;border-color:#f1d2cd}
+    .editor-tools{position:sticky;top:8px;z-index:80;background:#fbfdf9f2;border:1px solid #dce6db;border-radius:18px;padding:15px;margin:14px 0 17px;box-shadow:0 10px 26px #143a220f;backdrop-filter:blur(14px)}
+    .editor-tools-heading{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,370px);gap:18px;align-items:center}
+    .editor-tools-eyebrow{display:inline-block;color:#96701a;font-size:10px;letter-spacing:.13em;font-weight:850;margin-bottom:5px}
+    .editor-tools-heading h2{font-size:17px;margin:0;color:#173d27}
+    .editor-tools-heading p{font-size:12px;color:#6a756c;margin:4px 0 0}
+    .editor-search-field{display:flex;flex-direction:column;gap:5px}
+    .editor-search-field label{font-size:11px;font-weight:800;color:#425246}
+    .editor-search-field input{width:100%;border:1px solid #d4dfd3;background:#fff;border-radius:11px;padding:10px 12px;color:#17251d;outline:none}
+    .editor-search-field input:focus{border-color:#3f7c51;box-shadow:0 0 0 3px #3f7c5119}
+    .editor-search-field small{font-size:10px;color:#778378}
+    .editor-quick-nav{display:flex;gap:7px;overflow-x:auto;padding:12px 1px 2px;scrollbar-width:thin}
+    .editor-nav-chip{display:flex;flex-direction:column;align-items:flex-start;gap:2px;flex:0 0 auto;max-width:205px;background:#f1f6ef;color:#173d27;border:1px solid #dbe6d9;border-radius:11px;padding:8px 11px}
+    .editor-nav-chip span{font-size:11px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+    .editor-nav-chip small{font-size:9px;color:#708170;font-weight:650;white-space:nowrap}
+    .editor-nav-chip:hover{background:#e4f0e1;border-color:#bbd3b8}
+    .editor-nav-empty{font-size:12px;color:#6c786d;padding:7px}
+    .editor-field-help{font-size:12px;line-height:1.5;background:#eef6eb;color:#426448;border-left:3px solid #dcb45a;border-radius:8px;padding:10px 12px;margin:0}
+    .bottom-save{border-color:#d9e5d7;box-shadow:0 8px 28px #0b291319}
+    .bottom-save button{min-width:175px}
+    @media(max-width:760px){.editor-tools{top:4px;padding:12px;border-radius:14px}.editor-tools-heading{grid-template-columns:1fr;gap:10px}.editor-nav-chip{max-width:175px}.editor-nav-chip span{max-width:150px}.section-card{scroll-margin-top:260px}}
+    @media(max-width:480px){.editor-tools-heading h2{font-size:16px}.bottom-save{align-items:stretch;flex-direction:column}.bottom-save span{max-width:none}.bottom-save button{width:100%}}
   </style>
 </head>
 <body>
@@ -297,22 +154,20 @@
         </div>
       </div>
       <div class="status" id="mainStatus" role="status" aria-live="polite"></div>
-      <section class="section-tools" id="sectionTools" aria-label="Pencarian dan navigasi pengaturan">
-        <div class="section-tools-heading">
+      <section class="editor-tools" id="editorTools" aria-label="Navigasi pengaturan admin">
+        <div class="editor-tools-heading">
           <div>
-            <div class="section-label">Navigasi cepat</div>
-            <h2>Temukan pengaturan</h2>
-            <p class="muted">Cari nama bagian atau pilih pintasan untuk langsung menuju pengaturan yang ingin diperiksa.</p>
+            <span class="editor-tools-eyebrow">PANEL PENGATURAN</span>
+            <h2>Cari pengaturan website</h2>
+            <p>Gunakan pencarian atau klik bagian di bawah untuk langsung menuju bagian yang ingin diubah.</p>
           </div>
-          <span class="section-count" id="sectionSearchCount">Memuat bagian…</span>
+          <div class="editor-search-field">
+            <label for="editorSectionSearch">Cari bagian atau kata kunci</label>
+            <input id="editorSectionSearch" type="search" autocomplete="off" placeholder="Contoh: WhatsApp, logo, banner, harga…">
+            <small id="editorSectionCount" aria-live="polite">Memuat daftar bagian…</small>
+          </div>
         </div>
-        <div class="section-search-wrap" role="search">
-          <span class="section-search-icon" aria-hidden="true">⌕</span>
-          <input id="sectionSearch" type="search" autocomplete="off" placeholder="Cari: WhatsApp, produk, banner, galeri…" aria-label="Cari pengaturan admin" aria-controls="editor">
-          <button class="clear-search" id="clearSectionSearch" type="button" aria-label="Hapus pencarian" title="Hapus pencarian">×</button>
-        </div>
-        <nav id="sectionNav" class="section-nav" aria-label="Pilih bagian pengaturan"></nav>
-        <p class="search-empty" id="sectionSearchEmpty" hidden>Tidak ada bagian yang cocok. Coba kata lain seperti “kontak”, “produk”, atau “galeri”.</p>
+        <nav class="editor-quick-nav" id="editorQuickNav" aria-label="Daftar bagian pengaturan"></nav>
       </section>
       <div id="editor"><div class="section-card">Memuat data website…</div></div>
       <div class="bottom-save">
@@ -400,6 +255,166 @@
       const note = 'JPG/PNG/WebP · maksimal 2 MB';
       return `<div class="upload-row"><input class="file-input" id="heroFile" type="file" accept="image/jpeg,image/png,image/webp"><button class="secondary" type="button" id="uploadHero">Ganti Banner</button><span class="upload-note">${esc(note)}</span></div>`;
     }
+    function siteAssetUploadCard(label, target, path, index = null) {
+      const suffix = index === null ? 'one' : String(index);
+      const inputId = `site-asset-file-${target}-${suffix}`;
+      const indexAttr = index === null ? '' : ` data-index="${index}"`;
+      const preview = path ? `<img src="${esc(path)}" alt="${esc(label)}" loading="lazy">` : `<div style="height:118px;display:grid;place-items:center;background:#edf2ed;border-radius:8px;color:#647067;font-size:12px">Belum ada file</div>`;
+      return `<article class="site-asset-card">
+        <strong style="display:block;font-size:13px">${esc(label)}</strong>
+        ${preview}
+        <div class="asset-path">${esc(path || 'Belum ada path file')}</div>
+        <input class="file-input" id="${esc(inputId)}" data-site-asset-file="true" data-target="${esc(target)}"${indexAttr} type="file" accept="image/jpeg,image/png,image/webp" aria-label="Pilih file untuk ${esc(label)}">
+        <button class="secondary" type="button" data-action="upload-site-image" data-target="${esc(target)}"${indexAttr}>Ganti ${esc(label)}</button>
+        ${target.startsWith('siteSocial') && path ? `<button class="secondary" type="button" data-action="reset-social-icon" data-target="${esc(target)}">Kembali ke ikon standar</button>` : ''}
+        <span class="upload-note">JPG/PNG/WebP · maksimal 2 MB</span>
+      </article>`;
+    }
+    function normalizeWhatsAppDigits(input) {
+      const raw = String(input || '').trim();
+      const match = raw.match(/(?:wa\.me\/|api\.whatsapp\.com\/send\?phone=)(\+?\d{7,15})/i);
+      const digits = (match ? match[1] : raw).replace(/\D/g, '');
+      return digits.length >= 7 && digits.length <= 15 ? digits : '';
+    }
+    function whatsappUrlFromNumber(input) {
+      const digits = normalizeWhatsAppDigits(input);
+      return digits ? `https://wa.me/${digits}` : '';
+    }
+    function bindWhatsAppSettingsControls() {
+      const linkInput = $('#site-whatsapp-url');
+      const phoneInput = $('#contact-phone-wa');
+      if (!linkInput || !phoneInput || linkInput.dataset.bound === 'true') return;
+      linkInput.dataset.bound = 'true';
+      linkInput.addEventListener('change', () => {
+        const digits = normalizeWhatsAppDigits(linkInput.value);
+        if (!digits) {
+          showPopup('Link WhatsApp belum valid', 'Masukkan tautan https://wa.me/nomor atau nomor WhatsApp internasional (7–15 digit).', true);
+          linkInput.value = whatsappUrlFromNumber(phoneInput.value);
+          return;
+        }
+        phoneInput.value = `+${digits}`;
+        linkInput.value = `https://wa.me/${digits}`;
+      });
+      phoneInput.addEventListener('input', () => {
+        const link = whatsappUrlFromNumber(phoneInput.value);
+        if (link) linkInput.value = link;
+      });
+    }
+    function renderSiteSettings(s, waUrl = '') {
+      s = s || {};
+      waUrl = whatsappUrlFromNumber(waUrl) || whatsappUrlFromNumber(latestData?.contact?.phoneWhatsapp || '');
+      const navItems = [['home','Home'],['products','Produk'],['about','Tentang'],['gallery','Galeri'],['testimonials','Testimoni'],['contact','Kontak']];
+      const footerItems = [['home','Home'],['products','Produk'],['about','Tentang'],['gallery','Galeri'],['contact','Kontak']];
+      const filterItems = [['all','Semua'],['musang','Musang King'],['blackthorn','Black Thorn'],['monthong','Monthong'],['kupas','Durian Kupas'],['pancake','Pancake Durian'],['pancakeroll','Pancake Rolls'],['lainnya','Lainnya']];
+      const buttonTargets = [['#products','Bagian Produk'],['#about','Bagian Tentang'],['#gallery','Bagian Galeri'],['#contact','Bagian Kontak'],['#testimonials','Bagian Testimoni'],['#home','Beranda']];
+      const heroButtons = [0,1].map(i => {
+        const item = (s.heroButtons || [])[i] || { text: '', href: i ? '#about' : '#products' };
+        return `<article class="site-faq-card"><h3 style="font-size:13px;margin:0 0 10px">Tombol hero ${i + 1}</h3><div class="form-grid">
+          ${field('Teks tombol', `site-button-${i}-text`, item.text || '')}
+          ${selectField('Tujuan tombol', `site-button-${i}-href`, item.href || (i ? '#about' : '#products'), buttonTargets)}
+        </div></article>`;
+      }).join('');
+      const heroStats = [0,1,2].map(i => {
+        const item = (s.heroStats || [])[i] || { value: '', label: '' };
+        return `<article class="site-faq-card"><h3 style="font-size:13px;margin:0 0 10px">Statistik halaman depan ${i + 1}</h3><div class="form-grid">
+          ${field('Angka (tanpa titik/koma)', `site-hero-stat-${i}-value`, item.value, 'text')}
+          ${field('Label', `site-hero-stat-${i}-label`, item.label)}
+        </div></article>`;
+      }).join('');
+      const lowerStats = [0,1,2,3].map(i => {
+        const item = (s.lowerStats || [])[i] || { value: '', label: '' };
+        return `<article class="site-faq-card"><h3 style="font-size:13px;margin:0 0 10px">Statistik tambahan ${i + 1}</h3><div class="form-grid">
+          ${field('Nilai', `site-lower-stat-${i}-value`, item.value)}
+          ${field('Label', `site-lower-stat-${i}-label`, item.label)}
+        </div></article>`;
+      }).join('');
+      const faqItems = (s.faqs || []).map((item, i) => `<article class="site-faq-card" data-site-faq-index="${i}">
+        <div class="editable-card-heading"><h3>FAQ ${i + 1}</h3><button class="danger remove-button" type="button" data-action="remove-site-faq" data-index="${i}">Hapus FAQ</button></div>
+        ${field('Pertanyaan', `site-faq-${i}-question`, item.question || '', 'text', 'full')}
+        ${textarea('Jawaban', `site-faq-${i}-answer`, item.answer || '', 'full')}
+      </article>`).join('');
+      return `
+        <section class="section-card"><div class="section-heading"><div><div class="section-label">Pengaturan umum</div><h2>Identitas brand dan media sosial</h2><p class="muted">Ubah nama, tagline, serta tautan media sosial dari sini. Nomor WhatsApp utama mengikuti kolom Nomor WhatsApp di bagian Kontak toko.</p></div></div>
+          <div class="form-grid">
+            ${field('Nama brand', 'site-brand-name', s.brandName || '')}
+            ${field('Tagline brand', 'site-brand-tagline', s.brandTagline || '')}
+            ${field('Link WhatsApp (Hero, Footer, tombol mengambang & Checkout)', 'site-whatsapp-url', waUrl, 'url', 'full', 'placeholder="https://wa.me/6281378874840" autocomplete="url"')}
+            <p class="editor-field-help full">WhatsApp pada hero dan footer akan dipulihkan bila hilang. Nomor dari link ini disinkronkan ke kolom Nomor WhatsApp di Kontak toko, tombol WhatsApp mengambang, formulir kontak, dan checkout.</p>
+            ${field('Tautan Facebook', 'site-facebook-url', s.facebookUrl || '', 'url', 'full')}
+            ${field('Tautan Instagram', 'site-instagram-url', s.instagramUrl || '', 'url', 'full')}
+            ${field('Tautan TikTok', 'site-tiktok-url', s.tiktokUrl || '', 'url', 'full')}
+          </div><p class="notice">Kosongkan tautan Facebook/Instagram/TikTok jika ingin menyembunyikan tautan tersebut. Ikon custom tetap dipertahankan. Link WhatsApp memakai satu nomor yang sama untuk menjaga checkout tetap konsisten.</p>
+        </section>
+        <section class="section-card"><div class="section-heading"><div><div class="section-label">Logo dan gambar utama</div><h2>Ganti logo serta tiga banner halaman depan</h2><p class="muted">Pilih gambar baru untuk setiap slot. Gambar langsung dikirim ke GitHub dan area yang terkait diperbarui. Jangan tutup halaman sampai muncul notifikasi hasil.</p></div></div>
+          <h3 class="site-setting-subtitle">Logo</h3><div class="site-assets-grid">
+            ${siteAssetUploadCard('Logo header / loader / tentang', 'siteLogoHeader', s.headerLogoPath || '')}
+            ${siteAssetUploadCard('Logo hero', 'siteLogoHero', s.heroLogoPath || '')}
+            ${siteAssetUploadCard('Ikon verifikasi', 'siteVerifiedIcon', s.verifiedIconPath || '')}
+            ${siteAssetUploadCard('Favicon / ikon tab', 'siteFavicon', s.faviconPath || '')}
+          </div>
+          <h3 class="site-setting-subtitle">Ikon media sosial</h3><p class="muted">Upload logo PNG/WebP transparan untuk mengganti ikon default. Ikon yang diunggah akan dipakai di bagian sosial halaman depan dan footer sekaligus.</p><div class="site-assets-grid">
+            ${siteAssetUploadCard('Ikon Facebook', 'siteSocialFacebook', s.facebookIconPath || '')}
+            ${siteAssetUploadCard('Ikon Instagram', 'siteSocialInstagram', s.instagramIconPath || '')}
+            ${siteAssetUploadCard('Ikon TikTok', 'siteSocialTikTok', s.tiktokIconPath || '')}
+            ${siteAssetUploadCard('Ikon WhatsApp', 'siteSocialWhatsApp', s.whatsappIconPath || '')}
+          </div>
+          <h3 class="site-setting-subtitle">Banner halaman depan</h3><div class="site-assets-grid">
+            ${[0,1,2].map(i => siteAssetUploadCard(`Banner ${i + 1}`, 'heroBanner', (s.heroBanners || [])[i] || '', i)).join('')}
+          </div>
+        </section>
+        <section class="section-card"><div class="section-heading"><div><div class="section-label">SEO dan navigasi</div><h2>Judul mesin pencari dan menu website</h2><p class="muted">Judul halaman dan metadata membantu tab browser serta hasil mesin pencari. Menu bisa diubah teksnya tanpa mengganti fungsi anchor.</p></div></div>
+          <div class="form-grid">
+            ${field('Judul halaman / SEO title', 'site-page-title', s.pageTitle || '', 'text', 'full')}
+            ${field('Nama author', 'site-meta-author', s.metaAuthor || '')}
+            ${field('Kata kunci SEO', 'site-meta-keywords', s.metaKeywords || '', 'text', 'full')}
+            ${field('Deskripsi SEO', 'site-meta-description', s.metaDescription || '', 'text', 'full')}
+          </div>
+          <h3 class="site-setting-subtitle">Teks menu header</h3><div class="site-settings-grid">${navItems.map(([key,label]) => field(label, `site-nav-${key}`, (s.navLabels || {})[key] || label)).join('')}</div>
+          <h3 class="site-setting-subtitle">Teks menu footer</h3><div class="site-settings-grid">${footerItems.map(([key,label]) => field(label, `site-footer-nav-${key}`, (s.footerNavLabels || {})[key] || label)).join('')}</div>
+          <h3 class="site-setting-subtitle">Tombol di hero</h3><div class="site-faq-list">${heroButtons}</div>
+        </section>
+        <section class="section-card"><div class="section-heading"><div><div class="section-label">Teks dan komponen halaman</div><h2>Rating, statistik, judul bagian, footer, formulir dan FAQ</h2><p class="muted">Pengaturan ini mengubah teks yang tampil pada komponen yang tercantum. Produk, promo, testimoni, kontak, deskripsi Tentang, serta galeri tetap punya editor masing-masing di bagian dashboard.</p></div></div>
+          <div class="form-grid">
+            ${field('Teks rating hero', 'site-hero-rating', s.heroRating || '', 'text', 'full')}
+            ${field('Judul Galeri', 'site-gallery-title', s.galleryTitle || '')}
+            ${field('Judul Testimoni', 'site-testimonial-title', s.testimonialTitle || '')}
+            ${field('Judul Kontak', 'site-contact-title', s.contactTitle || '')}
+            ${field('Judul Google Maps', 'site-map-title', s.mapTitle || '')}
+            ${field('URL embed Google Maps', 'site-map-embed-url', s.mapEmbedUrl || '', 'text', 'full')}
+            ${field('Judul menu footer', 'site-footer-menu-title', s.footerMenuTitle || '')}
+            ${field('Judul sosial footer', 'site-footer-social-title', s.footerSocialTitle || '')}
+            ${field('Teks copyright footer', 'site-footer-copy', s.footerCopy || '', 'text', 'full')}
+            ${field('Placeholder nama member', 'site-member-placeholder', s.memberPlaceholder || '')}
+            ${field('Teks tombol member', 'site-member-button', s.memberButtonLabel || '')}
+            ${field('Placeholder pencarian produk', 'site-search-placeholder', s.searchPlaceholder || '')}
+            ${field('Placeholder nama pada formulir kontak', 'site-contact-name-placeholder', s.contactFormNamePlaceholder || '')}
+            ${field('Placeholder kota pada formulir kontak', 'site-contact-city-placeholder', s.contactFormCityPlaceholder || '')}
+            ${field('Placeholder pesan formulir kontak', 'site-contact-message-placeholder', s.contactFormMessagePlaceholder || '', 'text', 'full')}
+            ${field('Teks tombol formulir kontak', 'site-contact-form-button', s.contactFormButton || '')}
+            ${field('Placeholder voucher', 'site-coupon-placeholder', s.couponPlaceholder || '')}
+            ${field('Teks keranjang kosong', 'site-cart-empty-text', s.cartEmptyText || '')}
+            ${textarea('Deskripsi default pada detail produk', 'site-modal-description', s.modalDescription || '', 'full')}
+          </div>
+          <h3 class="site-setting-subtitle">Filter produk, keranjang, dan checkout</h3>
+          <p class="muted">Bagian ini hanya mengubah label yang terlihat. Kode fungsi filter, voucher, keranjang, dan proses checkout tidak diubah.</p>
+          <div class="site-settings-grid">
+            ${filterItems.map(([key,label]) => field(`Label filter: ${label}`, `site-filter-${key}`, (s.filterLabels || {})[key] || label)).join('')}
+            ${field('Judul keranjang', 'site-cart-title', s.cartTitle || '')}
+            ${field('Label total (termasuk mata uang)', 'site-cart-total-label', s.cartTotalLabel || '')}
+            ${field('Teks tombol voucher', 'site-apply-voucher-label', s.applyVoucherButtonLabel || '')}
+            ${field('Teks info diskon awal', 'site-discount-info-text', s.discountInfoText || '')}
+            ${field('Teks tombol checkout', 'site-checkout-button-label', s.checkoutButtonLabel || '')}
+            ${field('Teks tombol tambah produk', 'site-product-add-label', s.productAddButtonLabel || '')}
+            ${field('Teks notifikasi awal', 'site-toast-text', s.toastText || '')}
+          </div>
+          <h3 class="site-setting-subtitle">Label metode pembayaran</h3><div class="site-settings-grid">${[0,1,2].map(i => field(`Pilihan pembayaran ${i + 1}`, `site-payment-option-${i}`, (s.paymentOptions || [])[i] || '')).join('')}</div>
+          <h3 class="site-setting-subtitle">Statistik hero</h3><div class="site-faq-list">${heroStats}</div>
+          <h3 class="site-setting-subtitle">Statistik tambahan</h3><div class="site-faq-list">${lowerStats}</div>
+          <div class="editable-card-heading" style="margin-top:18px"><h3>FAQ yang tampil di website</h3><button class="primary" type="button" data-action="add-site-faq">+ Tambah FAQ</button></div>
+          ${field('Judul bagian FAQ', 'site-faq-title', s.faqTitle || 'FAQ', 'text', 'full')}
+          <div class="site-faq-list" style="margin-top:12px">${faqItems || '<p class="muted">Belum ada FAQ. Gunakan tombol Tambah FAQ untuk membuat pertanyaan.</p>'}</div>
+        </section>`;
+    }
     function renderPhotoManager(product) {
       const id = product.id;
       const isPersisted = persistedProductIds.has(id);
@@ -449,82 +464,9 @@
       if (data && typeof data.galleryVideoArchive === 'string' && data.galleryVideoArchive && !legacy.some(video => video.url === data.galleryVideoArchive)) legacy.push({ url: data.galleryVideoArchive, hidden: true });
       return legacy;
     }
-    function refreshSectionNavigation() {
-      const editor = $('#editor');
-      const nav = $('#sectionNav');
-      if (!editor || !nav) return;
-      const sections = Array.from(editor.querySelectorAll(':scope > .section-card'));
-      nav.innerHTML = '';
-      sections.forEach((section, index) => {
-        const heading = section.querySelector('.section-heading h2, h2');
-        const label = section.querySelector('.section-label');
-        const title = (heading ? heading.textContent : `Bagian ${index + 1}`).trim();
-        const category = (label ? label.textContent : '').trim();
-        const sectionId = `admin-setting-section-${index + 1}`;
-        section.id = sectionId;
-        section.dataset.adminSection = 'true';
-        const link = document.createElement('button');
-        link.type = 'button';
-        link.className = 'section-nav-link';
-        link.dataset.sectionTarget = sectionId;
-        link.dataset.sectionIndex = String(index);
-        link.textContent = title;
-        link.setAttribute('aria-label', category ? `${category}: ${title}` : title);
-        nav.appendChild(link);
-      });
-      applySectionSearch();
-    }
-
-    function applySectionSearch() {
-      const editor = $('#editor');
-      const nav = $('#sectionNav');
-      const search = $('#sectionSearch');
-      if (!editor || !nav || !search) return;
-      const query = search.value.trim().toLocaleLowerCase('id');
-      const sections = Array.from(editor.querySelectorAll(':scope > .section-card[data-admin-section="true"]'));
-      let matched = 0;
-      sections.forEach((section, index) => {
-        const fieldText = Array.from(section.querySelectorAll('input:not([type="file"]), textarea, select'))
-          .map(control => {
-            const labels = control.labels ? Array.from(control.labels).map(item => item.textContent).join(' ') : '';
-            return `${labels} ${control.value || ''} ${control.placeholder || ''} ${control.id || ''}`;
-          }).join(' ');
-        const searchText = `${section.textContent || ''} ${fieldText}`.toLocaleLowerCase('id');
-        const isMatch = !query || searchText.includes(query);
-        section.hidden = !isMatch;
-        const link = nav.querySelector(`[data-section-index="${index}"]`);
-        if (link) link.hidden = !isMatch;
-        if (isMatch) matched++;
-      });
-      const count = $('#sectionSearchCount');
-      if (count) count.textContent = query ? `${matched} dari ${sections.length} bagian cocok` : `${sections.length} bagian pengaturan`;
-      const empty = $('#sectionSearchEmpty');
-      if (empty) empty.hidden = !query || matched > 0;
-    }
-
-    $('#sectionSearch').addEventListener('input', applySectionSearch);
-    $('#clearSectionSearch').addEventListener('click', () => {
-      $('#sectionSearch').value = '';
-      applySectionSearch();
-      $('#sectionSearch').focus();
-    });
-    $('#sectionNav').addEventListener('click', event => {
-      const link = event.target.closest('button[data-section-target]');
-      if (!link || link.hidden) return;
-      const target = document.getElementById(link.dataset.sectionTarget);
-      if (!target) return;
-      $('#sectionNav').querySelectorAll('.section-nav-link.active').forEach(item => {
-        item.classList.remove('active');
-        item.removeAttribute('aria-current');
-      });
-      link.classList.add('active');
-      link.setAttribute('aria-current', 'location');
-      target.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
-    });
-
     function renderEditor(data) {
       latestData = data;
-      const c = data.contact, h = data.hero, a = data.about;
+      const c = data.contact, h = data.hero, a = data.about, site = data.siteSettings || {};
       const products = data.products.map(p => `
         <article class="product-card" data-editor-product-id="${esc(p.id)}">
           <div class="editable-card-heading"><h3>${esc(p.name || 'Produk baru')}</h3><button class="danger remove-button" type="button" data-action="remove-product" data-id="${esc(p.id)}">Hapus Produk</button></div>
@@ -599,12 +541,13 @@
           ${field('Email / kontak email', 'contact-email', c.email, 'text')}
           ${field('Jam operasional', 'contact-hours', c.hours, 'text', 'full')}
         </div></section>
-        <section class="section-card"><div class="section-heading"><div><div class="section-label">Bagian utama</div><h2>Hero / halaman depan</h2><p class="muted">Teks besar yang pertama dilihat pengunjung.</p></div></div><div class="form-grid">
+        ${renderSiteSettings(site, data.whatsappUrl || whatsappUrlFromNumber(c.phoneWhatsapp))}
+        <section class="section-card"><div class="section-heading"><div><div class="section-label">Bagian utama</div><h2>Hero / halaman depan</h2><p class="muted">Teks utama yang ditampilkan di bagian depan website.</p></div></div><div class="form-grid">
           ${field('Judul besar', 'hero-title', h.title)}
           ${field('Subjudul', 'hero-subtitle', h.subtitle)}
           ${textarea('Kalimat pengenalan', 'hero-story', h.story, 'full')}
           ${textarea('Daftar produk singkat', 'hero-tagline', h.tagline, 'full')}
-        </div>${fileUpload('hero')}</section>
+        </div></section>
         <section class="section-card"><div class="section-heading"><div><div class="section-label">Tentang toko</div><h2>Deskripsi EGYA DURIAN</h2></div></div><div class="form-grid">
           ${field('Judul bagian', 'about-title', a.title, 'text', 'full')}
           ${textarea('Paragraf pertama', 'about-p1', a.paragraph1, 'full')}
@@ -635,11 +578,47 @@
         <section class="section-card"><div class="section-heading"><div><div class="section-label">Produk</div><h2>Harga, nama, dan foto produk</h2><p class="muted">Tambah/hapus produk. Card baru mengikuti desain card produk website. Setelah produk disimpan, unggah fotonya.</p></div><button class="primary" type="button" data-action="add-product">+ Tambah Produk</button></div><div class="product-grid">${products}</div></section>
         <section class="section-card"><div class="section-heading"><div><div class="section-label">Ulasan pelanggan</div><h2>Testimoni</h2><p class="muted">Tambah atau hapus testimoni pelanggan.</p></div><button class="primary" type="button" data-action="add-testimonial">+ Tambah Testimoni</button></div><div class="product-grid">${testimonials || '<p class="muted">Belum ada testimoni. Gunakan tombol Tambah Testimoni untuk menambah.</p>'}</div></section>
         <p class="notice">Foto yang diunggah disimpan ke folder assets di GitHub. Setiap penyimpanan membuat commit baru. Jangan tutup halaman sampai popup hasil muncul.</p>`;
-      refreshSectionNavigation();
-      $('#uploadHero').addEventListener('click', () => handleHeroUpload());
       $('#uploadSiteGallery').addEventListener('click', () => handleSiteGalleryUpload());
       $('#uploadSiteGalleryVideo').addEventListener('click', () => handleSiteGalleryVideoUpload());
+      bindWhatsAppSettingsControls();
+      refreshEditorTools();
     }
+    function refreshEditorTools() {
+      const editor = $('#editor');
+      const nav = $('#editorQuickNav');
+      const search = $('#editorSectionSearch');
+      const counter = $('#editorSectionCount');
+      if (!editor || !nav || !search || !counter) return;
+      const query = search.value.trim().toLocaleLowerCase('id');
+      const sections = Array.from(editor.children).filter(node => node.classList && node.classList.contains('section-card'));
+      let visible = 0;
+      const buttons = [];
+      sections.forEach((section, index) => {
+        const title = section.querySelector('.section-heading h2')?.textContent.trim() || `Bagian ${index + 1}`;
+        const eyebrow = section.querySelector('.section-label')?.textContent.trim() || '';
+        const searchable = `${eyebrow} ${title} ${section.textContent}`.toLocaleLowerCase('id');
+        const matched = !query || searchable.includes(query);
+        section.hidden = !matched;
+        section.dataset.editorSectionIndex = String(index);
+        if (matched) {
+          visible++;
+          buttons.push(`<button type="button" class="editor-nav-chip" data-section-index="${index}" title="${esc(`${eyebrow} · ${title}`)}"><span>${esc(title)}</span><small>${esc(eyebrow)}</small></button>`);
+        }
+      });
+      nav.innerHTML = buttons.length ? buttons.join('') : '<span class="editor-nav-empty">Tidak ada bagian yang cocok. Coba kata kunci lain.</span>';
+      counter.textContent = query ? `Menampilkan ${visible} dari ${sections.length} bagian` : `${sections.length} bagian pengaturan · klik untuk menuju bagian`;
+    }
+    $('#editorSectionSearch').addEventListener('input', refreshEditorTools);
+    $('#editorQuickNav').addEventListener('click', event => {
+      const button = event.target.closest('button[data-section-index]');
+      if (!button) return;
+      const sections = Array.from($('#editor').children).filter(node => node.classList && node.classList.contains('section-card'));
+      const section = sections[Number(button.dataset.sectionIndex)];
+      if (!section || section.hidden) return;
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      section.classList.add('admin-section-focus');
+      window.setTimeout(() => section.classList.remove('admin-section-focus'), 1300);
+    });
     function readForm() {
       const value = id => { const element = $(id); return element ? element.value.trim() : ''; };
       const products = Array.from($('#editor').querySelectorAll('[data-editor-product-id]')).map(card => {
@@ -659,11 +638,43 @@
         name: value(`#testimonial-${row.dataset.testimonialIndex}-name`),
         text: value(`#testimonial-${row.dataset.testimonialIndex}-text`),
       }));
+      const oldSite = latestData?.siteSettings || {};
+      // The contact phone remains the single source of truth. Editing the WhatsApp link
+      // synchronizes this field before Save, so checkout and all WhatsApp links stay aligned.
+      const resolvedWhatsappPhone = value('#contact-phone-wa');
+      const navLabels = Object.fromEntries(['home','products','about','gallery','testimonials','contact'].map(key => [key, value(`#site-nav-${key}`)]));
+      const footerNavLabels = Object.fromEntries(['home','products','about','gallery','contact'].map(key => [key, value(`#site-footer-nav-${key}`)]));
+      const heroStats = [0,1,2].map(i => ({ value: value(`#site-hero-stat-${i}-value`), label: value(`#site-hero-stat-${i}-label`) }));
+      const lowerStats = [0,1,2,3].map(i => ({ value: value(`#site-lower-stat-${i}-value`), label: value(`#site-lower-stat-${i}-label`) }));
+      const heroButtons = [0,1].map(i => ({ text: value(`#site-button-${i}-text`), href: value(`#site-button-${i}-href`) }));
+      const faqs = Array.from($('#editor').querySelectorAll('[data-site-faq-index]')).map(row => ({
+        question: value(`#site-faq-${row.dataset.siteFaqIndex}-question`),
+        answer: value(`#site-faq-${row.dataset.siteFaqIndex}-answer`),
+      }));
+      const siteSettings = {
+        ...oldSite,
+        brandName: value('#site-brand-name'), brandTagline: value('#site-brand-tagline'),
+        facebookUrl: value('#site-facebook-url'), instagramUrl: value('#site-instagram-url'), tiktokUrl: value('#site-tiktok-url'),
+        filterLabels: Object.fromEntries(['all','musang','blackthorn','monthong','kupas','pancake','pancakeroll','lainnya'].map(key => [key, value(`#site-filter-${key}`)])),
+        cartTitle: value('#site-cart-title'), cartTotalLabel: value('#site-cart-total-label'), applyVoucherButtonLabel: value('#site-apply-voucher-label'),
+        discountInfoText: value('#site-discount-info-text'), paymentOptions: [0,1,2].map(i => value(`#site-payment-option-${i}`)),
+        checkoutButtonLabel: value('#site-checkout-button-label'), productAddButtonLabel: value('#site-product-add-label'), toastText: value('#site-toast-text'),
+        pageTitle: value('#site-page-title'), metaDescription: value('#site-meta-description'), metaKeywords: value('#site-meta-keywords'), metaAuthor: value('#site-meta-author'),
+        heroRating: value('#site-hero-rating'), heroStats, lowerStats, navLabels, footerNavLabels, heroButtons,
+        galleryTitle: value('#site-gallery-title'), testimonialTitle: value('#site-testimonial-title'), contactTitle: value('#site-contact-title'),
+        mapTitle: value('#site-map-title'), mapEmbedUrl: value('#site-map-embed-url'),
+        footerMenuTitle: value('#site-footer-menu-title'), footerSocialTitle: value('#site-footer-social-title'), footerCopy: value('#site-footer-copy'),
+        memberPlaceholder: value('#site-member-placeholder'), memberButtonLabel: value('#site-member-button'), searchPlaceholder: value('#site-search-placeholder'),
+        contactFormNamePlaceholder: value('#site-contact-name-placeholder'), contactFormCityPlaceholder: value('#site-contact-city-placeholder'),
+        contactFormMessagePlaceholder: value('#site-contact-message-placeholder'), contactFormButton: value('#site-contact-form-button'),
+        couponPlaceholder: value('#site-coupon-placeholder'), cartEmptyText: value('#site-cart-empty-text'), modalDescription: value('#site-modal-description'),
+        faqTitle: value('#site-faq-title'), faqs,
+      };
       return {
-        contact: { location: value('#contact-location'), phonePrimary: value('#contact-phone-primary'), phoneWhatsapp: value('#contact-phone-wa'), email: value('#contact-email'), hours: value('#contact-hours') },
+        contact: { location: value('#contact-location'), phonePrimary: value('#contact-phone-primary'), phoneWhatsapp: resolvedWhatsappPhone, email: value('#contact-email'), hours: value('#contact-hours') },
         hero: { title: value('#hero-title'), subtitle: value('#hero-subtitle'), story: value('#hero-story'), tagline: value('#hero-tagline') },
         about: { title: value('#about-title'), paragraph1: value('#about-p1'), paragraph2: value('#about-p2') },
-        promos, products, testimonials,
+        siteSettings, promos, products, testimonials,
         gallery: Array.from($('#editor').querySelectorAll('[data-site-gallery-src]')).map(tile => tile.dataset.siteGallerySrc),
         galleryVideos: (() => { try { return JSON.parse(value('#siteGalleryVideos') || '[]'); } catch { return normalizeGalleryVideos(latestData || {}); } })(),
       };
@@ -684,6 +695,18 @@
         contact: draftData.contact,
         hero: draftData.hero,
         about: draftData.about,
+        siteSettings: {
+          ...(serverData.siteSettings || {}), ...(draftData.siteSettings || {}),
+          heroBanners: draftData.siteSettings?.heroBanners || serverData.siteSettings?.heroBanners || [],
+          heroStats: draftData.siteSettings?.heroStats || serverData.siteSettings?.heroStats || [],
+          lowerStats: draftData.siteSettings?.lowerStats || serverData.siteSettings?.lowerStats || [],
+          navLabels: { ...(serverData.siteSettings?.navLabels || {}), ...(draftData.siteSettings?.navLabels || {}) },
+          footerNavLabels: { ...(serverData.siteSettings?.footerNavLabels || {}), ...(draftData.siteSettings?.footerNavLabels || {}) },
+          filterLabels: { ...(serverData.siteSettings?.filterLabels || {}), ...(draftData.siteSettings?.filterLabels || {}) },
+          paymentOptions: draftData.siteSettings?.paymentOptions || serverData.siteSettings?.paymentOptions || [],
+          heroButtons: draftData.siteSettings?.heroButtons || serverData.siteSettings?.heroButtons || [],
+          faqs: draftData.siteSettings?.faqs || serverData.siteSettings?.faqs || [],
+        },
         promos: draftData.promos,
         testimonials: draftData.testimonials,
         gallery: draftData.gallery || serverData.gallery || [],
@@ -732,6 +755,76 @@
       } catch (error) {
         showStatus($('#mainStatus'), error.message, true);
         showPopup('Gagal mengganti banner', error.message, true);
+      } finally { busy = false; setButtons(false); }
+    }
+    async function handleResetSocialIcon(button) {
+      if (busy) return;
+      const target = button.dataset.target || '';
+      const config = {
+        siteSocialFacebook: ['resetSocialIconFacebook', 'facebookIconPath', 'Facebook'],
+        siteSocialInstagram: ['resetSocialIconInstagram', 'instagramIconPath', 'Instagram'],
+        siteSocialTikTok: ['resetSocialIconTikTok', 'tiktokIconPath', 'TikTok'],
+        siteSocialWhatsApp: ['resetSocialIconWhatsApp', 'whatsappIconPath', 'WhatsApp'],
+      }[target];
+      if (!config) return showPopup('Ikon tidak valid', 'Muat ulang halaman admin lalu coba lagi.', true);
+      if (!confirm(`Kembalikan ikon ${config[2]} ke ikon standar? Tautan media sosial tidak berubah.`)) return;
+      const draft = readForm();
+      busy = true; setButtons(true);
+      try {
+        const result = await api('/api/admin/upload', { method: 'POST', body: JSON.stringify({ target: config[0] }) });
+        const latest = await api('/api/admin/content');
+        persistedProductIds = new Set(latest.data.products.map(product => product.id));
+        const merged = mergeDraftIntoServer(latest.data, draft);
+        merged.siteSettings[config[1]] = '';
+        renderEditor(merged);
+        showStatus($('#mainStatus'), result.message || `Ikon ${config[2]} kembali ke ikon standar.`);
+        showPopup('Ikon dikembalikan', result.message || `Ikon ${config[2]} kembali ke ikon standar.`, false);
+      } catch (error) {
+        showStatus($('#mainStatus'), error.message, true);
+        showPopup('Gagal mengembalikan ikon', error.message, true);
+      } finally { busy = false; setButtons(false); }
+    }
+    async function handleSiteImageUpload(button) {
+      if (busy) return;
+      const target = button.dataset.target || '';
+      const index = button.dataset.index === undefined ? null : Number(button.dataset.index);
+      const suffix = index === null ? 'one' : String(index);
+      const input = $(`#site-asset-file-${target}-${suffix}`);
+      const file = input && input.files ? input.files[0] : null;
+      if (!file) return showPopup('Pilih gambar', 'Pilih gambar JPG, PNG, atau WebP pada kartu yang ingin diganti.', true);
+      try { validateImageFile(file); } catch (error) { return showPopup('File tidak valid', error.message, true); }
+      const labels = { siteLogoHeader: 'logo header', siteLogoHero: 'logo hero', siteVerifiedIcon: 'ikon verifikasi', siteFavicon: 'favicon', siteSocialFacebook: 'ikon Facebook', siteSocialInstagram: 'ikon Instagram', siteSocialTikTok: 'ikon TikTok', siteSocialWhatsApp: 'ikon WhatsApp', heroBanner: `banner ${Number(index) + 1}` };
+      const label = labels[target];
+      if (!label) return showPopup('Tujuan gambar tidak valid', 'Muat ulang admin lalu coba lagi.', true);
+      if (!confirm(`Ganti ${label} pada website? Gambar baru akan disimpan ke GitHub dan Vercel akan menerbitkan perubahan otomatis.`)) return;
+      const draft = readForm();
+      busy = true; setButtons(true);
+      try {
+        showStatus($('#mainStatus'), `Mengunggah ${label} ke GitHub…`);
+        const result = await sendImageFile(target, '', file, 'replace', index === null ? 0 : index);
+        const latest = await api('/api/admin/content');
+        persistedProductIds = new Set(latest.data.products.map(product => product.id));
+        const merged = mergeDraftIntoServer(latest.data, draft);
+        const site = merged.siteSettings || (merged.siteSettings = {});
+        if (target === 'siteLogoHeader') site.headerLogoPath = result.path;
+        else if (target === 'siteLogoHero') site.heroLogoPath = result.path;
+        else if (target === 'siteVerifiedIcon') site.verifiedIconPath = result.path;
+        else if (target === 'siteSocialFacebook') site.facebookIconPath = result.path;
+        else if (target === 'siteSocialInstagram') site.instagramIconPath = result.path;
+        else if (target === 'siteSocialTikTok') site.tiktokIconPath = result.path;
+        else if (target === 'siteSocialWhatsApp') site.whatsappIconPath = result.path;
+        else if (target === 'siteFavicon') site.faviconPath = result.path;
+        else if (target === 'heroBanner') {
+          site.heroBanners = Array.isArray(site.heroBanners) ? site.heroBanners.slice() : [];
+          while (site.heroBanners.length < 3) site.heroBanners.push('');
+          site.heroBanners[index] = result.path;
+        }
+        renderEditor(merged);
+        showStatus($('#mainStatus'), result.message || `${label} berhasil diganti.`);
+        showPopup(`${label} berhasil diganti`, `${result.message || 'Gambar berhasil diperbarui.'} Perubahan teks yang belum disimpan tetap berada di formulir.`, false);
+      } catch (error) {
+        showStatus($('#mainStatus'), error.message, true);
+        showPopup(`Gagal mengganti ${label}`, error.message, true);
       } finally { busy = false; setButtons(false); }
     }
     async function handleSiteGalleryUpload() {
@@ -1004,8 +1097,32 @@ Pastikan Blob Store Public terhubung ke project EGYA DURIAN pada Storage → Pro
         handlePermanentVideoDelete(button);
         return;
       }
+      if (action === 'upload-site-image') {
+        handleSiteImageUpload(button);
+        return;
+      }
+      if (action === 'reset-social-icon') {
+        handleResetSocialIcon(button);
+        return;
+      }
       const data = readForm();
-      if (action === 'remove-gallery-photo') {
+      if (action === 'add-site-faq') {
+        const settings = data.siteSettings || (data.siteSettings = {});
+        settings.faqs = Array.isArray(settings.faqs) ? settings.faqs : [];
+        if (settings.faqs.length >= 20) return showPopup('Batas FAQ tercapai', 'Maksimal 20 pertanyaan FAQ dapat ditampilkan.', true);
+        settings.faqs.push({ question: '', answer: '' });
+        renderEditor(data);
+        showStatus($('#mainStatus'), 'FAQ baru ditambahkan. Isi pertanyaan dan jawaban sebelum menyimpan.');
+        $(`#site-faq-${settings.faqs.length - 1}-question`).focus();
+      } else if (action === 'remove-site-faq') {
+        const index = Number(button.dataset.index);
+        const item = (data.siteSettings?.faqs || [])[index];
+        if (!item) return showPopup('FAQ tidak ditemukan', 'Muat ulang data sebelum mencoba lagi.', true);
+        if (!confirm(`Hapus FAQ ${index + 1}? Perubahan diterapkan setelah Simpan Perubahan.`)) return;
+        data.siteSettings.faqs.splice(index, 1);
+        renderEditor(data);
+        showStatus($('#mainStatus'), 'FAQ ditandai untuk dihapus. Tekan Simpan Perubahan untuk menerapkannya.');
+      } else if (action === 'remove-gallery-photo') {
         const index = Number(button.dataset.index);
         const path = data.gallery[index];
         if (!path) return showPopup('Foto tidak ditemukan', 'Muat ulang data galeri lalu coba lagi.', true);
