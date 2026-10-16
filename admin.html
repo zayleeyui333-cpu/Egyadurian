@@ -118,6 +118,8 @@
     .bottom-save button{min-width:175px}
     @media(max-width:760px){.editor-tools{top:4px;padding:12px;border-radius:14px}.editor-tools-heading{grid-template-columns:1fr;gap:10px}.editor-nav-chip{max-width:175px}.editor-nav-chip span{max-width:150px}.section-card{scroll-margin-top:260px}}
     @media(max-width:480px){.editor-tools-heading h2{font-size:16px}.bottom-save{align-items:stretch;flex-direction:column}.bottom-save span{max-width:none}.bottom-save button{width:100%}}
+
+
 /* v13 visual refinement: CSS-only overlay. All editor fields, templates, and JS handlers stay unchanged. */
 :root {
   --green: #153f2c;
@@ -284,7 +286,168 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
 
-  </style>
+
+/* v14 professional dashboard skin: presentation/navigation only. Existing editor fields and business logic are preserved. */
+:root {
+  --green: #083b2b;
+  --green2: #0f6747;
+  --gold: #e7bd55;
+  --ink: #18251f;
+  --muted: #66766d;
+  --line: #e1e8e3;
+  --paper: #f1f5f2;
+  --white: #fff;
+  --danger: #a82b35;
+  --success: #216e45;
+  --admin-sidebar-width: 264px;
+}
+html { scroll-behavior: smooth; scroll-padding-top: 150px; }
+body { background: #eef3ef; }
+.shell { max-width: 1320px; padding: 22px 18px 42px; }
+.brand { background: linear-gradient(135deg,#063927 0%,#0b4b35 58%,#126144 100%); border: 1px solid #15543b; box-shadow: 0 10px 26px rgba(7,48,32,.13); }
+.brand-mark { border-radius: 14px; background: linear-gradient(150deg,#fffdf5,#f0ddb0); box-shadow: inset 0 0 0 1px #ead6a3; }
+.brand h1 { letter-spacing: .02em; }
+.brand p { color: #d4e5da; }
+.login-card { border-radius: 22px; box-shadow: 0 18px 44px rgba(12,50,33,.1); }
+button,input,textarea,select { font-family: inherit; }
+button { transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease, border-color .15s ease; }
+button:not(:disabled):hover { transform: translateY(-1px); }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3px solid rgba(231,189,85,.72); outline-offset: 2px; }
+.primary { background: linear-gradient(135deg,#0c5b3c,#14774e); box-shadow: 0 3px 10px rgba(9,87,56,.14); }
+.primary:hover { background: linear-gradient(135deg,#08482f,#0e6844); }
+.secondary { background: #f6faf6; color: #164934; border-color: #d7e4da; }
+.danger { background: #fff4f3; color: #9b2730; border-color: #f1d7d5; }
+.field label { color: #35473d; font-size: 12px; font-weight: 800; }
+.field input,.field textarea,.field select { min-height: 42px; border: 1px solid #d6e1d8; border-radius: 11px; background: #fff; padding: 10px 12px; transition: border-color .15s,box-shadow .15s; }
+.field textarea { min-height: 92px; }
+.field input:hover,.field textarea:hover,.field select:hover { border-color: #b5cbb9; }
+.field input:focus,.field textarea:focus,.field select:focus { border-color: #23865a; box-shadow: 0 0 0 3px rgba(35,134,90,.13); outline: none; }
+.section-card { margin-top: 16px; padding: clamp(16px,2vw,24px); border-radius: 18px; border: 1px solid #dfe8e1; background: #fff; box-shadow: 0 8px 24px rgba(18,62,39,.045); scroll-margin-top: 165px; animation: adminRise .25s ease both; }
+.section-heading { padding-bottom: 14px; margin-bottom: 20px; border-bottom: 1px solid #edf1ed; }
+.section-heading h2 { color: #123e2b; font-size: clamp(17px,1.5vw,20px); letter-spacing: -.018em; }
+.section-heading p { max-width: 850px; font-size: 12px; line-height: 1.6; }
+.section-label { display: inline-flex; margin-bottom: 9px; padding: 5px 9px; border-radius: 7px; background: #eaf4ec; color: #236141; font-size: 10px; letter-spacing: .1em; }
+.site-setting-subtitle { margin-top: 24px; padding: 0 0 0 11px; border-left: 3px solid var(--gold); color: #20563b; font-size: 13px; }
+.product-card,.site-faq-card,.site-asset-card,.photo-tile,.site-gallery-tile,.site-gallery-video-panel { border-color: #e0e8e2; border-radius: 14px; box-shadow: 0 3px 10px rgba(18,62,39,.025); }
+.product-card { background: #fcfdfc; padding: 16px; }
+.site-asset-card,.site-faq-card,.photo-tile,.site-gallery-tile,.site-gallery-video-panel { background: #fcfdfc; }
+.photo-manager,.site-gallery-video-upload { border-radius: 14px; }
+.site-gallery-video-upload { border-color: #c9dccc; background: #f5faf6; }
+.status { border: 1px solid transparent; }
+.status.ok { border-color: #cce6d2; }
+.status.error { border-color: #f0cfce; }
+.bottom-save { position: sticky; bottom: 12px; z-index: 55; padding: 12px 14px; border-radius: 16px; background: rgba(255,255,255,.94); border-color: #d9e5dc; box-shadow: 0 12px 32px rgba(12,48,31,.13); backdrop-filter: blur(16px); }
+.bottom-save span { line-height: 1.45; }
+.bottom-save button { min-height: 44px; }
+
+/* Authenticated app shell, based on the selected professional dashboard reference. */
+.shell.admin-dashboard-active { width: 100%; max-width: none; min-height: 100vh; margin: 0; padding: 0; }
+.shell.admin-dashboard-active > .brand { position: fixed; z-index: 151; left: 0; top: 0; width: var(--admin-sidebar-width); height: 132px; margin: 0; padding: 23px 18px 22px; border: 0; border-bottom: 1px solid rgba(225,245,229,.13); border-radius: 0; box-shadow: none; display: flex; flex-wrap: wrap; align-content: center; justify-content: flex-start; align-items: center; gap: 11px; }
+.shell.admin-dashboard-active > .brand .brand-mark { width: 44px; height: 44px; font-size: 24px; }
+.shell.admin-dashboard-active > .brand h1 { color: #fff; font-size: 15px; }
+.shell.admin-dashboard-active > .brand p { max-width: 150px; font-size: 9px; letter-spacing: .06em; }
+.shell.admin-dashboard-active > .brand .brand-spacer { display: none; }
+.shell.admin-dashboard-active > .brand .logo-tag { flex-basis: 100%; margin: -2px 0 0 55px; color: #e9c761; font-size: 9px; }
+.shell.admin-dashboard-active > #dashboard { width: calc(100% - var(--admin-sidebar-width)); max-width: none; min-width: 0; margin: 0 0 0 var(--admin-sidebar-width); padding: 25px clamp(18px,2vw,32px) 36px; }
+.admin-sidebar { display: none; }
+.shell.admin-dashboard-active > .admin-sidebar { position: fixed; display: flex; flex-direction: column; z-index: 150; top: 132px; bottom: 0; left: 0; width: var(--admin-sidebar-width); padding: 18px 12px 12px; color: #e6f1e9; background: linear-gradient(180deg,#073a2a 0%,#052e22 100%); border-right: 1px solid rgba(213,238,220,.12); overflow: auto; overscroll-behavior: contain; }
+.admin-sidebar-label { padding: 2px 10px 9px; color: #93b9a2; font-size: 9px; letter-spacing: .15em; font-weight: 850; }
+.admin-sidebar-home { display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 12px; margin-bottom: 20px; border: 1px solid rgba(233,199,97,.25); border-radius: 10px; background: rgba(231,189,85,.13); color: #f4d77e; text-align: left; font-size: 12px; font-weight: 800; box-shadow: none; }
+.admin-sidebar-home .admin-nav-icon { background: rgba(231,189,85,.16); color: #f3d87b; }
+.admin-sidebar-section-title { padding: 0 10px 8px; color: #91b3a0; font-size: 9px; font-weight: 850; letter-spacing: .12em; }
+.admin-sidebar-nav { min-height: 60px; }
+.admin-sidebar .editor-quick-nav { display: flex; flex-direction: column; align-items: stretch; gap: 4px; overflow: visible; padding: 0 0 16px; }
+.admin-sidebar .editor-nav-chip { position: relative; display: grid; grid-template-columns: 29px minmax(0,1fr); grid-template-rows: auto auto; align-items: center; gap: 2px 8px; width: 100%; max-width: none; min-height: 47px; padding: 7px 9px; border: 1px solid transparent; border-radius: 9px; color: #dce9df; background: transparent; text-align: left; box-shadow: none; }
+.admin-sidebar .editor-nav-chip:hover,.admin-sidebar .editor-nav-chip.is-active { color: #fff; background: rgba(255,255,255,.095); border-color: rgba(223,240,225,.13); transform: none; }
+.admin-sidebar .editor-nav-chip.is-active { background: rgba(231,189,85,.13); border-color: rgba(231,189,85,.26); }
+.admin-nav-icon { grid-column: 1; grid-row: 1 / span 2; display: grid; place-items: center; width: 27px; height: 27px; flex: none; border-radius: 8px; background: rgba(236,247,238,.09); color: #c6ddcc; font-size: 14px; font-weight: 800; }
+.admin-sidebar .editor-nav-chip > span:not(.admin-nav-icon) { grid-column: 2; grid-row: 1; max-width: none; overflow: hidden; color: inherit; font-size: 11px; font-weight: 750; line-height: 1.35; white-space: normal; }
+.admin-sidebar .editor-nav-chip small { grid-column: 2; grid-row: 2; color: #8eaa98; font-size: 9px; font-weight: 600; white-space: normal; }
+.admin-sidebar .editor-nav-empty { padding: 10px; color: #c3d3c7; font-size: 11px; }
+.admin-sidebar-footer { display: flex; flex-direction: column; gap: 11px; margin-top: auto; padding: 15px 10px 6px; border-top: 1px solid rgba(231,244,233,.13); color: #94b4a0; font-size: 10px; }
+.admin-sidebar-footer .admin-site-state { display: flex; align-items: center; gap: 7px; }
+.admin-sidebar-footer .admin-site-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #6bd59b; box-shadow: 0 0 0 4px rgba(107,213,155,.12); }
+.admin-sidebar-footer a { color: #f0cf6e; text-decoration: none; font-weight: 800; }
+.admin-sidebar-footer a:hover { text-decoration: underline; }
+.admin-sidebar-toggle { display: none; align-items: center; justify-content: center; width: 38px; height: 38px; padding: 0; border: 1px solid rgba(238,247,239,.25); border-radius: 10px; color: #fff; background: rgba(255,255,255,.09); box-shadow: none; }
+.admin-sidebar-backdrop { display: none; }
+.shell.admin-dashboard-active .panel-intro { display: grid; grid-template-columns: minmax(0,1fr) auto; grid-template-areas: "title actions" "description actions"; gap: 5px 18px; align-items: center; padding: 4px 2px 20px; }
+.shell.admin-dashboard-active .panel-intro h2 { grid-area: title; margin: 0; color: #143d2b; font-size: clamp(23px,2.4vw,30px); font-weight: 850; letter-spacing: -.035em; }
+.shell.admin-dashboard-active .panel-intro > p { grid-area: description; margin: 0; max-width: 760px; line-height: 1.55; font-size: 12px; }
+.shell.admin-dashboard-active .panel-intro .top-actions { grid-area: actions; justify-content: flex-end; margin: 0; }
+.shell.admin-dashboard-active .top-actions .muted { font-size: 10px; }
+.shell.admin-dashboard-active #mainStatus { margin: 0 0 12px; }
+.editor-tools { position: sticky; top: 10px; z-index: 90; margin: 0 0 16px; padding: 14px 16px; border: 1px solid #dce7de; border-radius: 16px; background: rgba(255,255,255,.95); box-shadow: 0 10px 26px rgba(15,60,37,.09); backdrop-filter: blur(14px); }
+.editor-tools-heading { display: grid; grid-template-columns: minmax(0,1fr) minmax(240px,370px); gap: 18px; align-items: center; }
+.editor-tools-eyebrow { color: #96731e; font-size: 9px; letter-spacing: .16em; }
+.editor-tools-heading h2 { margin: 0; color: #173d2b; font-size: 15px; }
+.editor-tools-heading p { margin-top: 3px; font-size: 11px; }
+.editor-search-field label { font-size: 10px; }
+.editor-search-field input { min-height: 41px; border-radius: 10px; }
+.editor-search-field small { font-size: 10px; }
+.admin-overview { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 13px; margin: 0 0 16px; }
+.admin-overview-card { position: relative; display: flex; align-items: center; gap: 12px; min-width: 0; padding: 16px; border: 1px solid #e0e9e2; border-radius: 15px; background: #fff; box-shadow: 0 5px 18px rgba(12,57,34,.035); }
+.admin-overview-icon { display: grid; place-items: center; width: 42px; height: 42px; flex: none; border-radius: 12px; background: #e8f3ea; color: #135b3b; font-size: 18px; font-weight: 900; }
+.admin-overview-card:nth-child(2) .admin-overview-icon { background: #fbf0d6; color: #8c6612; }
+.admin-overview-card:nth-child(3) .admin-overview-icon { background: #e5f1ed; color: #1e7257; }
+.admin-overview-card:nth-child(4) .admin-overview-icon { background: #edf0fa; color: #4b5d9c; }
+.admin-overview-copy { min-width: 0; }
+.admin-overview-label { display: block; color: #69766d; font-size: 10px; font-weight: 750; }
+.admin-overview-value { display: block; margin-top: 3px; color: #173d2b; font-size: clamp(21px,2vw,27px); font-weight: 900; line-height: 1.1; letter-spacing: -.035em; }
+.admin-overview-note { display: block; margin-top: 4px; color: #849087; font-size: 9px; line-height: 1.4; }
+#editor { min-width: 0; }
+.section-card.admin-section-focus { border-color: #d6ae47; box-shadow: 0 0 0 3px rgba(231,189,85,.23),0 13px 32px rgba(13,63,37,.08); }
+.site-settings-grid,.site-faq-list { gap: 14px; }
+.site-gallery-grid { gap: 13px; }
+.bottom-save span { color: #637269; }
+.bottom-save button { background: linear-gradient(135deg,#0c5b3c,#14774e); }
+@keyframes adminRise { from { opacity:.7; transform:translateY(3px); } to { opacity:1; transform:translateY(0); } }
+@media (max-width: 1120px) {
+  :root { --admin-sidebar-width: 232px; }
+  .admin-overview { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .shell.admin-dashboard-active > #dashboard { padding: 20px 18px 32px; }
+  .shell.admin-dashboard-active > .brand { padding-left: 14px; padding-right: 12px; }
+  .admin-sidebar .editor-nav-chip { padding-left: 7px; padding-right: 7px; }
+}
+@media (max-width: 820px) {
+  .shell.admin-dashboard-active > .brand { position: sticky; top: 0; z-index: 191; width: 100%; height: auto; min-height: 72px; padding: 11px 14px; flex-wrap: nowrap; gap: 10px; }
+  .shell.admin-dashboard-active > .brand .brand-mark { width: 40px; height: 40px; }
+  .shell.admin-dashboard-active > .brand h1 { font-size: 14px; }
+  .shell.admin-dashboard-active > .brand p { font-size: 9px; }
+  .shell.admin-dashboard-active > .brand .brand-spacer { display: block; flex: 1; }
+  .shell.admin-dashboard-active > .brand .logo-tag { display: none; }
+  .shell.admin-dashboard-active .admin-sidebar-toggle { display: inline-flex; flex: none; }
+  .shell.admin-dashboard-active > #dashboard { width: 100%; margin-left: 0; padding: 18px 14px 28px; }
+  .shell.admin-dashboard-active > .admin-sidebar { top: 0; bottom: 0; width: min(310px,86vw); padding: 20px 12px 14px; z-index: 221; transform: translateX(-105%); transition: transform .22s ease; box-shadow: 16px 0 45px rgba(0,0,0,.22); }
+  .shell.admin-dashboard-active > .admin-sidebar.mobile-open { transform: translateX(0); }
+  .admin-sidebar-backdrop.is-open { display: block; position: fixed; inset: 0; z-index: 220; background: rgba(6,24,15,.5); backdrop-filter: blur(2px); }
+  .shell.admin-dashboard-active .panel-intro { grid-template-columns: minmax(0,1fr); grid-template-areas: "title" "description" "actions"; gap: 6px; padding-bottom: 16px; }
+  .shell.admin-dashboard-active .panel-intro .top-actions { justify-content: space-between; margin-top: 8px; }
+  .editor-tools { top: 6px; padding: 12px; }
+  .editor-tools-heading { grid-template-columns: minmax(0,1fr); gap: 10px; }
+}
+@media (max-width: 520px) {
+  .admin-overview { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+  .admin-overview-card { align-items: flex-start; gap: 8px; padding: 11px 10px; }
+  .admin-overview-icon { width: 34px; height: 34px; border-radius: 10px; font-size: 15px; }
+  .admin-overview-label { font-size: 9px; }
+  .admin-overview-value { font-size: 21px; }
+  .admin-overview-note { font-size: 8px; }
+  .shell.admin-dashboard-active > #dashboard { padding: 14px 10px 24px; }
+  .shell.admin-dashboard-active .panel-intro h2 { font-size: 23px; }
+  .section-card { padding: 15px 12px; }
+  .site-assets-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .site-gallery-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .bottom-save { bottom: 5px; padding: 10px; gap: 8px; }
+  .bottom-save span { max-width: 100%; font-size: 10px; }
+  .bottom-save button { width: 100%; min-height: 43px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *,*::before,*::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+</style>
 </head>
 <body>
   <main class="shell">
@@ -1423,5 +1586,150 @@ Pastikan Blob Store Public terhubung ke project EGYA DURIAN pada Storage → Pro
       } catch { /* Keep the login screen visible until the owner signs in. */ }
     })();
   </script>
+
+<script>
+/* v14 dashboard presentation layer only. Existing admin API calls and editor handlers above remain unchanged. */
+(function setupProfessionalAdminShell() {
+  'use strict';
+  const shell = document.querySelector('main.shell');
+  const dashboard = document.getElementById('dashboard');
+  const brand = shell && shell.querySelector(':scope > .brand');
+  const editor = document.getElementById('editor');
+  const editorTools = document.getElementById('editorTools');
+  const quickNav = document.getElementById('editorQuickNav');
+  if (!shell || !dashboard || !brand || !editor || !editorTools || !quickNav) return;
+  if (document.getElementById('adminSidebar')) return;
+
+  const sidebar = document.createElement('aside');
+  sidebar.id = 'adminSidebar';
+  sidebar.className = 'admin-sidebar';
+  sidebar.setAttribute('aria-label', 'Navigasi dashboard admin');
+  sidebar.innerHTML = `
+    <div class="admin-sidebar-label">MENU UTAMA</div>
+    <button type="button" id="adminSidebarHome" class="admin-sidebar-home"><span class="admin-nav-icon" aria-hidden="true">⌂</span><span>Dashboard</span></button>
+    <div class="admin-sidebar-section-title">KELOLA WEBSITE</div>
+    <div class="admin-sidebar-nav" id="adminSidebarNav"></div>
+    <div class="admin-sidebar-footer">
+      <div class="admin-site-state"><span class="admin-site-dot" aria-hidden="true"></span><span>Panel pemilik · Terhubung ke GitHub</span></div>
+      <a href="/" target="_blank" rel="noopener noreferrer">↗ Lihat Website</a>
+    </div>`;
+  shell.insertBefore(sidebar, dashboard);
+  const sideNav = sidebar.querySelector('#adminSidebarNav');
+  sideNav.appendChild(quickNav);
+
+  const toggle = document.createElement('button');
+  toggle.type = 'button';
+  toggle.className = 'admin-sidebar-toggle';
+  toggle.id = 'adminSidebarToggle';
+  toggle.setAttribute('aria-label', 'Buka navigasi');
+  toggle.setAttribute('aria-controls', 'adminSidebar');
+  toggle.setAttribute('aria-expanded', 'false');
+  toggle.textContent = '☰';
+  brand.appendChild(toggle);
+
+  const backdrop = document.createElement('div');
+  backdrop.className = 'admin-sidebar-backdrop';
+  backdrop.id = 'adminSidebarBackdrop';
+  backdrop.setAttribute('aria-hidden', 'true');
+  shell.appendChild(backdrop);
+
+  const overview = document.createElement('section');
+  overview.className = 'admin-overview';
+  overview.id = 'adminOverview';
+  overview.setAttribute('aria-label', 'Ringkasan website');
+  overview.innerHTML = `
+    <article class="admin-overview-card"><span class="admin-overview-icon" aria-hidden="true">▦</span><div class="admin-overview-copy"><span class="admin-overview-label">Produk</span><strong class="admin-overview-value" data-overview-value="products">—</strong><span class="admin-overview-note">Produk yang dikelola</span></div></article>
+    <article class="admin-overview-card"><span class="admin-overview-icon" aria-hidden="true">▧</span><div class="admin-overview-copy"><span class="admin-overview-label">Foto galeri</span><strong class="admin-overview-value" data-overview-value="photos">—</strong><span class="admin-overview-note">Media foto website</span></div></article>
+    <article class="admin-overview-card"><span class="admin-overview-icon" aria-hidden="true">▷</span><div class="admin-overview-copy"><span class="admin-overview-label">Video galeri</span><strong class="admin-overview-value" data-overview-value="videos">—</strong><span class="admin-overview-note">Termasuk video tersembunyi</span></div></article>
+    <article class="admin-overview-card"><span class="admin-overview-icon" aria-hidden="true">☷</span><div class="admin-overview-copy"><span class="admin-overview-label">Bagian pengaturan</span><strong class="admin-overview-value" data-overview-value="sections">—</strong><span class="admin-overview-note">Bagian yang bisa diedit</span></div></article>`;
+  editorTools.insertAdjacentElement('beforebegin', overview);
+
+  const isMobile = () => window.matchMedia('(max-width: 820px)').matches;
+  function syncDashboardState() {
+    const active = !dashboard.classList.contains('hidden');
+    shell.classList.toggle('admin-dashboard-active', active);
+    if (!active) closeSidebar();
+  }
+  function closeSidebar() {
+    sidebar.classList.remove('mobile-open');
+    backdrop.classList.remove('is-open');
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-label', 'Buka navigasi');
+  }
+  function openSidebar() {
+    sidebar.classList.add('mobile-open');
+    backdrop.classList.add('is-open');
+    toggle.setAttribute('aria-expanded', 'true');
+    toggle.setAttribute('aria-label', 'Tutup navigasi');
+  }
+  toggle.addEventListener('click', () => sidebar.classList.contains('mobile-open') ? closeSidebar() : openSidebar());
+  backdrop.addEventListener('click', closeSidebar);
+  window.addEventListener('resize', () => { if (!isMobile()) closeSidebar(); });
+  document.addEventListener('keydown', event => { if (event.key === 'Escape') closeSidebar(); });
+
+  document.getElementById('adminSidebarHome').addEventListener('click', () => {
+    overview.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    sideNav.querySelectorAll('.editor-nav-chip').forEach(button => button.classList.remove('is-active'));
+    closeSidebar();
+  });
+  function iconFor(label) {
+    const text = String(label || '').toLocaleLowerCase('id');
+    if (/identitas|sosial|brand/.test(text)) return '◉';
+    if (/logo|gambar|banner|slider/.test(text)) return '▧';
+    if (/seo|navigasi|menu|mesin pencari/.test(text)) return '⌕';
+    if (/teks|komponen|statistik|faq|formulir/.test(text)) return '☷';
+    if (/kontak|toko|whatsapp/.test(text)) return '☎';
+    if (/hero|halaman depan/.test(text)) return '✦';
+    if (/tentang|deskripsi/.test(text)) return 'ⓘ';
+    if (/galeri|video|foto/.test(text)) return '▣';
+    if (/promo|promosi/.test(text)) return '◆';
+    if (/produk|harga/.test(text)) return '▦';
+    if (/ulasan|testimoni/.test(text)) return '☆';
+    return '◈';
+  }
+  function decorateNav() {
+    sideNav.querySelectorAll('button.editor-nav-chip').forEach(button => {
+      if (button.querySelector('.admin-nav-icon')) return;
+      const title = button.querySelector('span')?.textContent || button.textContent || '';
+      const icon = document.createElement('span');
+      icon.className = 'admin-nav-icon';
+      icon.setAttribute('aria-hidden', 'true');
+      icon.textContent = iconFor(title);
+      button.prepend(icon);
+      button.setAttribute('aria-label', String(title).trim());
+    });
+  }
+  sideNav.addEventListener('click', event => {
+    const button = event.target.closest('button.editor-nav-chip');
+    if (!button) return;
+    sideNav.querySelectorAll('.editor-nav-chip').forEach(item => item.classList.toggle('is-active', item === button));
+    closeSidebar();
+  });
+  const navObserver = new MutationObserver(decorateNav);
+  navObserver.observe(quickNav, { childList: true });
+  decorateNav();
+
+  function updateOverview() {
+    const counts = {
+      products: editor.querySelectorAll('[data-editor-product-id]').length,
+      photos: editor.querySelectorAll('.site-gallery-tile[data-site-gallery-src]').length,
+      videos: editor.querySelectorAll('.site-gallery-video-panel[data-gallery-video-url]').length,
+      sections: Array.from(editor.children).filter(node => node.classList && node.classList.contains('section-card')).length
+    };
+    Object.entries(counts).forEach(([key, count]) => {
+      const target = overview.querySelector(`[data-overview-value="${key}"]`);
+      if (target) target.textContent = new Intl.NumberFormat('id-ID').format(count);
+    });
+  }
+  const editorObserver = new MutationObserver(() => window.requestAnimationFrame(updateOverview));
+  editorObserver.observe(editor, { childList: true, subtree: true });
+  updateOverview();
+
+  const dashboardObserver = new MutationObserver(syncDashboardState);
+  dashboardObserver.observe(dashboard, { attributes: true, attributeFilter: ['class'] });
+  syncDashboardState();
+})();
+</script>
+
 </body>
 </html>
